@@ -91,19 +91,16 @@ export default function WelcomePage() {
   }, []);
 
   const loadMarketing = useCallback(async () => {
-    // Paint hero stats first; defer heavier lists so the landing feels faster.
-    const o = await marketingApi.overview(countryCode);
-    setOverview(o.data.overview);
-    const [c, cats] = await Promise.all([
+    const [o, c, cats, r, s] = await Promise.all([
+      marketingApi.overview(countryCode),
       marketingApi.cities(countryCode),
       marketingApi.categories(countryCode),
+      marketingApi.reviews(6, countryCode),
+      marketingApi.search({ pageSize: 8, country: countryCode }),
     ]);
+    setOverview(o.data.overview);
     setCities(c.data.cities.slice(0, 8));
     setCategories(cats.data.categories.slice(0, 8));
-    const [r, s] = await Promise.all([
-      marketingApi.reviews(6, countryCode),
-      marketingApi.search({ pageSize: 6, country: countryCode }),
-    ]);
     setReviews(r.data.reviews);
     setFeatured(s.data.experts);
   }, [countryCode]);
@@ -112,9 +109,11 @@ export default function WelcomePage() {
     let cancelled = false;
     void (async () => {
       try {
-        if (!cancelled) await loadMarketing();
+        await loadMarketing();
       } catch {
-        // keep zeros — no dummy figures
+        if (!cancelled) {
+          // keep zeros — no dummy figures
+        }
       }
     })();
     return () => {

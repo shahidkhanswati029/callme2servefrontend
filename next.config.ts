@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // Do not add mapbox-gl here — it breaks vector tile / style loading.
     optimizePackageImports: [
-      "mapbox-gl",
       "i18n-iso-countries",
       "@reduxjs/toolkit",
       "socket.io-client",

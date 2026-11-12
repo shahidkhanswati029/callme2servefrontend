@@ -3,25 +3,38 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
+    "@reduxjs/toolkit": "^2.13.0",
+    "@simplewebauthn/browser": "^14.0.0",
+    "country-to-currency": "^3.0.1",
+    "firebase": "^13.2.0",
+    "i18n-iso-countries": "^7.14.0",
+    "js-cookie": "^3.0.8",
+    "mapbox-gl": "^3.34.2",
+    "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4"
+    "react-redux": "^9.3.1",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/js-cookie": "^3.0.6",
+    "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
-    "@eslint/eslintrc": "^3"
+    "local-ssl-proxy": "^2.0.5",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

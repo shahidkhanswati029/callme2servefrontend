@@ -1,26 +1,194 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+html[data-theme="light"] {
+  --paper: #f6f1e7;
+  --ink: #1a2822;
+  --muted: #4a5c54;
+  --forest: #1b3c33;
+  --brass: #e09a2b;
+  --brass-deep: #8c5a0c;
+  --cream: #fffcf8;
+  --line: #d3c7b6;
+  --mint: #e5f2eb;
+  --success: #1f7a62;
+  --sidebar: #1b3c33;
+  --sidebar-text: #d5e0d8;
+  --font-display: var(--font-noto-serif);
+  --font-body: var(--font-inter);
+}
+
+html[data-theme="dark"] {
+  --paper: #121a17;
+  --ink: #e8f0eb;
+  --muted: #9bb0a6;
+  --forest: #2d6b58;
+  --brass: #e0a53a;
+  --brass-deep: #f0c878;
+  --cream: #1a2420;
+  --line: #2f4038;
+  --mint: #1c2e28;
+  --success: #3dba95;
+  --sidebar: #0d1512;
+  --sidebar-text: #c5d4cc;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-forest: var(--forest);
+  --color-brass: var(--brass);
+  --color-brass-deep: var(--brass-deep);
+  --color-cream: var(--cream);
+  --color-line: var(--line);
+  --color-mint: var(--mint);
+  --color-success: var(--success);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply m-0 min-h-screen bg-paper text-ink antialiased;
+  font-family: var(--font-body), "Noto Sans", sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-noto-serif), Georgia, serif;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.45s ease both;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  @apply rounded-lg;
+  background: linear-gradient(90deg, var(--line) 0%, var(--cream) 45%, var(--line) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease infinite;
+}
+
+html[data-theme="dark"] .btn-primary {
+  color: #f6f1e7;
+}
+
+/* Shared auth utilities (Tailwind @apply) */
+.eyebrow {
+  @apply mb-1 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep;
+}
+.display {
+  @apply font-display font-bold tracking-tight text-ink;
+}
+.display-italic {
+  @apply font-display italic font-normal text-forest;
+}
+.lede {
+  @apply text-sm leading-relaxed text-muted;
+}
+.btn {
+  @apply inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[0.95rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-primary {
+  @apply bg-forest text-paper;
+}
+.btn-google {
+  @apply border border-line bg-cream text-ink;
+}
+.btn-facebook {
+  @apply bg-[#1877f2] text-white;
+}
+.btn-ghost {
+  @apply border border-line bg-transparent text-ink;
+}
+.g-mark {
+  @apply grid h-7 w-7 place-items-center rounded-lg bg-[#e8f0fe] font-bold text-[#1a73e8];
+}
+.f-mark {
+  @apply grid h-7 w-7 place-items-center rounded-lg bg-[#1464cc] font-bold text-white;
+}
+.field {
+  @apply grid gap-1 text-sm font-semibold;
+}
+.field input {
+  @apply min-h-12 rounded-xl border border-line bg-cream px-3 py-2 font-normal text-ink outline-none focus:border-forest;
+}
+.form-error {
+  @apply m-0 text-sm text-red-800;
+}
+.hint {
+  @apply m-0 text-sm leading-snug text-muted;
+}
+.footer-link {
+  @apply mt-5 text-sm text-muted;
+}
+.stack {
+  @apply grid gap-3;
+}
+.stack-lg {
+  @apply grid gap-4;
+}
+.promise-list {
+  @apply mt-5 grid list-none gap-3 p-0;
+}
+.promise-list li {
+  @apply grid grid-cols-[auto_1fr] items-start gap-3 text-sm text-ink;
+}
+.promise-num {
+  @apply grid h-6 w-6 place-items-center rounded-full bg-mint text-xs font-bold text-forest;
+}
+.bio-grid {
+  @apply grid grid-cols-2 gap-3;
+}
+.bio-card {
+  @apply rounded-2xl border border-line bg-cream px-3 py-4 text-center;
+}
+.bio-card.active {
+  @apply border-success;
+}
+.bio-icon {
+  @apply mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-mint text-xl text-forest;
+}
+.note-box {
+  @apply mt-4 rounded-xl bg-mint px-4 py-3 text-sm leading-snug text-ink;
+}
+.note-box strong {
+  @apply mb-1 block text-forest;
+}
+.account-grid {
+  @apply my-5 grid grid-cols-2 gap-3;
+}
+.account-grid dt {
+  @apply mb-1 text-[0.7rem] font-semibold uppercase tracking-wide text-brass-deep;
+}
+.account-grid dd {
+  @apply m-0 font-semibold;
+}
+.oauth-overlay {
+  @apply absolute inset-0 overflow-hidden opacity-[0.011];
+}
+.bio-hero {
+  @apply mb-4 grid place-items-center;
+}
+.bio-hero-ring {
+  @apply grid h-32 w-32 place-items-center rounded-full border-[3px] border-success bg-mint text-2xl font-bold text-success;
 }

@@ -23,9 +23,25 @@ declare global {
         }) => void,
         opts: { scope: string },
       ) => void;
+      getLoginStatus?: (cb: (response: { status: string }) => void) => void;
     };
     fbAsyncInit?: () => void;
   }
+}
+
+function domainSetupHint() {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://your-frontend-domain";
+  const host =
+    typeof window !== "undefined" ? window.location.hostname : "your-frontend-domain";
+  return (
+    `Facebook blocked this site. In Meta Developer → your app: ` +
+    `Settings → Basic → App Domains add "${host}"; ` +
+    `Add platform Website with Site URL "${origin}/"; ` +
+    `Facebook Login → Settings → Valid OAuth Redirect URIs add "${origin}/"; ` +
+    `App Mode Live (or add your Facebook account as Tester). ` +
+    `Use a stable Production domain (not a changing Vercel preview URL).`
+  );
 }
 
 export function FacebookSignInButton({
@@ -52,23 +68,34 @@ export function FacebookSignInButton({
       setReady(true);
     };
     if (document.getElementById("facebook-jssdk")) {
-      if (window.FB) setReady(true);
+      if (window.FB) {
+        window.FB.init({
+          appId,
+          cookie: true,
+          xfbml: false,
+          version: "v21.0",
+        });
+        setReady(true);
+      }
       return;
     }
     const script = document.createElement("script");
     script.id = "facebook-jssdk";
     script.src = "https://connect.facebook.net/en_US/sdk.js";
     script.async = true;
+    script.onerror = () => {
+      toast.error("Could not load Facebook SDK. Check network / ad blockers.");
+    };
     document.body.appendChild(script);
-  }, [appId]);
+  }, [appId, toast]);
 
   function onClick() {
     if (!appId) {
-      toast.error("Set NEXT_PUBLIC_FACEBOOK_APP_ID in .env.local");
+      toast.error("Set NEXT_PUBLIC_FACEBOOK_APP_ID in your host env (Vercel/Railway), then rebuild.");
       return;
     }
     if (!window.FB || !ready) {
-      toast.info("Facebook SDK still loading");
+      toast.info("Facebook SDK still loading — try again in a second.");
       return;
     }
     setBusy(true);
@@ -76,7 +103,11 @@ export function FacebookSignInButton({
       async (response) => {
         try {
           if (!response.authResponse?.accessToken) {
-            toast.info("Facebook login cancelled");
+            if (response.status === "unknown" || response.status === "not_authorized") {
+              toast.error(domainSetupHint());
+            } else {
+              toast.info("Facebook login cancelled");
+            }
             return;
           }
           const res = await identityApi.facebook(response.authResponse.accessToken);
@@ -94,7 +125,12 @@ export function FacebookSignInButton({
           else if (!a.hasWebAuthn) router.push("/onboarding/biometrics");
           else router.push("/home");
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Facebook failed");
+          const msg = err instanceof Error ? err.message : "Facebook failed";
+          if (/facebook|domain|unavailable|origin|app.?id/i.test(msg)) {
+            toast.error(`${msg}. ${domainSetupHint()}`);
+          } else {
+            toast.error(msg);
+          }
         } finally {
           setBusy(false);
         }
@@ -109,6 +145,7 @@ export function FacebookSignInButton({
       className="btn btn-facebook"
       onClick={onClick}
       disabled={busy || (Boolean(appId) && !ready)}
+      title={!appId ? "Facebook App ID missing in env" : undefined}
     >
       <span className="f-mark">f</span>
       {busy ? "Connecting…" : label}

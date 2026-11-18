@@ -78,8 +78,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" translate="no" className="notranslate" suppressHydrationWarning>
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"} />
         <script
           dangerouslySetInnerHTML={{
@@ -87,7 +88,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${notoSerif.variable} ${inter.variable}`}>
+      <body className={`notranslate ${notoSerif.variable} ${inter.variable}`} translate="no">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

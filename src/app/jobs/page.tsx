@@ -13,6 +13,8 @@ import { Loader, ButtonLoader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useConfirm } from "@/shared/confirm/ConfirmProvider";
+import { t, tDynamic } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const RAILS = ["JAZZCASH", "EASYPAISA", "GOOGLE_PAY", "PAYPAL", "DEBIT_CARD"] as const;
 
@@ -28,6 +30,7 @@ export default function JobsPage() {
 
 function Inner() {
   const me = useAppSelector((s) => s.session.account)!;
+  const lang = useUiLanguage();
   const toast = useToast();
   const { confirm } = useConfirm();
   const search = useSearchParams();
@@ -140,7 +143,7 @@ function Inner() {
   }
 
   return (
-    <AppShell title="Jobs & pay">
+    <AppShell title={t(lang, "jobs")}>
       <section className="mb-6 rounded-2xl border border-line bg-mint p-4 text-sm text-ink">
         <h3 className="font-display text-lg font-bold">How payment works</h3>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
@@ -219,8 +222,11 @@ function Inner() {
                       {iAmWorker ? "Work for" : "Ask to"} {other.name}
                     </strong>
                     <p className="text-sm text-muted">
-                      {j.currency} {j.quotation + j.visitFee} · commission {j.packageRate}% ={" "}
-                      {j.commission} · net {j.netToWorker} · {j.status}
+                      {j.currency} {j.quotation + j.visitFee}
+                      {j.commission > 0
+                        ? ` · commission ${j.packageRate}% = ${j.commission}`
+                        : ""}{" "}
+                      · net {j.netToWorker} · {tDynamic(lang, j.status)}
                       {j.rail ? ` · ${j.rail}` : ""}
                     </p>
                   </div>
@@ -246,7 +252,7 @@ function Inner() {
                         Accept
                       </button>
                     ) : null}
-                    {iAmAsker && j.status === "ACCEPTED" ? (
+                    {iAmAsker && (j.status === "ACCEPTED" || j.status === "BOOKED") ? (
                       <button
                         type="button"
                         disabled={busyId === j.id}

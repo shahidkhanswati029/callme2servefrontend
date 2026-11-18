@@ -13,6 +13,8 @@ import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { formatChatDay, formatChatTime } from "@/shared/time";
+import { t, tDynamic } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function NotificationsPage() {
   return (
@@ -49,6 +51,7 @@ function ActorAvatar({
 
 function Inner() {
   const toast = useToast();
+  const lang = useUiLanguage();
   const [rows, setRows] = useState<AppNotification[]>([]);
   const [total, setTotal] = useState(0);
   const [unread, setUnread] = useState(0);
@@ -93,29 +96,31 @@ function Inner() {
   }
 
   return (
-    <AppShell title="Notifications">
+    <AppShell title={t(lang, "notifications")}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted">
-          {unread ? `${unread} unread` : "All caught up"} · name + photo like Facebook
+          {unread
+            ? `${unread} ${t(lang, "unreadCount")}`
+            : t(lang, "allCaughtUp")}
         </p>
         <button
           type="button"
           className="rounded-xl border border-line bg-cream px-3 py-1.5 text-sm font-semibold"
           onClick={async () => {
             await notificationsApi.markAllRead();
-            toast.success("All marked read");
+            toast.success(t(lang, "profileDone"));
             void load();
           }}
         >
-          Mark all read
+          {t(lang, "profileDone")}
         </button>
       </div>
 
       {loading ? (
-        <Loader label="Loading notifications…" />
+        <Loader label={t(lang, "loading")} />
       ) : rows.length === 0 ? (
         <p className="rounded-2xl border border-line bg-cream p-4 text-sm text-muted">
-          No notifications yet. Job asks, chat, and payments land here.
+          {t(lang, "allCaughtUp")}
         </p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-line bg-cream">
@@ -125,15 +130,19 @@ function Inner() {
               jobId?: string;
               otherId?: string;
               actorName?: string;
+              quotationId?: string;
             };
-            const actorName = n.actor?.name || data.actorName || n.title;
-            const href = data.jobId
-              ? "/jobs"
-              : data.otherId
-                ? `/inbox/${data.otherId}`
-                : data.conversationId
-                  ? "/inbox"
-                  : "/notifications";
+            const actorName = n.actor?.name || data.actorName || tDynamic(lang, n.title) || n.title;
+            const href = data.quotationId
+              ? `/quotations/${data.quotationId}`
+              : data.jobId
+                ? "/jobs"
+                : data.otherId
+                  ? `/inbox/${data.otherId}`
+                  : data.conversationId
+                    ? "/inbox"
+                    : "/notifications";
+            const title = tDynamic(lang, n.title);
             return (
               <Link
                 key={n.id}
@@ -146,13 +155,17 @@ function Inner() {
                 <ActorAvatar name={actorName} photoUrl={n.actor?.photoUrl} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <strong className="text-sm text-ink">{actorName}</strong>
+                    <strong className="text-sm text-ink">
+                      {n.actor?.name || data.actorName || title}
+                    </strong>
                     <span className="shrink-0 text-[0.65rem] text-muted">
                       {formatChatDay(n.createdAt)} · {formatChatTime(n.createdAt)}
                     </span>
                   </div>
                   <p className="mt-0.5 text-sm text-muted">
-                    {n.kind === "CHAT" ? n.body : `${n.title}${n.body ? ` — ${n.body}` : ""}`}
+                    {n.kind === "CHAT"
+                      ? n.body
+                      : `${title}${n.body ? ` — ${n.body}` : ""}`}
                   </p>
                 </div>
                 {!n.readAt ? (

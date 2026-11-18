@@ -14,7 +14,7 @@ import {
 } from "@/store/slices/uiPrefsSlice";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { ButtonLoader } from "@/shared/ui/Loader";
-import { t, UI_LANGUAGE_OPTIONS, type UiLanguage } from "@/shared/i18n";
+import { getUiLanguageOptions, isUiLanguage, t, type UiLanguage } from "@/shared/i18n";
 import { listCountries } from "@/shared/countries";
 import { notificationsApi } from "@/modules/notifications/api";
 import { useSocket } from "@/modules/chat/useSocket";
@@ -23,7 +23,9 @@ const expertHrefs = [
   { href: "/home", key: "home" },
   { href: "/inbox", key: "message" },
   { href: "/notifications", key: "notifications" },
+  { href: "/quotations", key: "quotations" },
   { href: "/jobs", key: "jobs" },
+  { href: "/portfolio", key: "portfolio" },
   { href: "/shops", key: "shops" },
   { href: "/settings/place", key: "place" },
   { href: "/earnings", key: "earnings" },
@@ -79,11 +81,13 @@ export function AppShell({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const toast = useToast();
-  const lang = (account?.uiLanguage || uiLang || "en") as UiLanguage;
+  // Redux language changer is source of truth (not stale account.uiLanguage).
+  const lang = (isUiLanguage(uiLang) ? uiLang : "en") as UiLanguage;
   const isDesk = account?.seat === "DESK";
   const [unread, setUnread] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const countries = useMemo(() => listCountries(), []);
+  const languageOptions = useMemo(() => getUiLanguageOptions(lang), [lang]);
   const currencies = useMemo(() => {
     const set = new Set(countries.map((c) => c.currency).filter(Boolean));
     return Array.from(set).sort();
@@ -149,9 +153,20 @@ export function AppShell({
       >
         <div>
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass">
-            {isDesk ? "SUPER ADMIN" : account?.package || "EXPERT"}
+            {isDesk
+              ? t(lang, "desk")
+              : t(
+                  lang,
+                  account?.package === "SILVER"
+                    ? "packageSilver"
+                    : account?.package === "GOLD"
+                      ? "packageGold"
+                      : account?.package === "PLATINUM"
+                        ? "packagePlatinum"
+                        : "packageFree",
+                )}
           </p>
-          <h1 className="font-display mt-2 text-2xl font-bold">CallMe2Serve</h1>
+          <h1 className="font-display mt-2 text-2xl font-bold">{t(lang, "brandName")}</h1>
           <p className="mt-2 text-sm text-[var(--sidebar-text)]">
             {account?.name}
             {account?.isOnline ? ` · ${t(lang, "online")}` : ""}
@@ -166,7 +181,7 @@ export function AppShell({
                   <Link
                     key={l.href}
                     href={l.href}
-                    className={`rounded-xl px-3 py-2.5 font-semibold transition-colors ${
+                    className={`cmts-sidebar-link rounded-xl px-3 py-2.5 font-semibold transition-colors ${
                       active
                         ? "bg-[#14332b] text-paper"
                         : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
@@ -182,7 +197,7 @@ export function AppShell({
                   <Link
                     key={l.href}
                     href={l.href}
-                    className={`relative rounded-xl px-3 py-2.5 font-semibold transition-colors ${
+                    className={`cmts-sidebar-link relative rounded-xl px-3 py-2.5 font-semibold transition-colors ${
                       active
                         ? "bg-[#14332b] text-paper"
                         : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
@@ -205,7 +220,7 @@ export function AppShell({
           className="mt-auto rounded-xl border border-white/20 px-3 py-2.5 text-left text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
           onClick={async () => {
             await dispatch(signOut());
-            toast.info("Signed out");
+            toast.info(t(lang, "signedOut"));
             router.push("/");
           }}
         >
@@ -287,9 +302,21 @@ export function AppShell({
                 className="rounded-xl border border-line bg-cream px-2 py-2 text-xs font-semibold"
                 value={uiLang}
                 aria-label={t(lang, "language")}
-                onChange={(e) => dispatch(setUiLanguage(e.target.value as UiLanguage))}
+                onChange={(e) => {
+                  const next = e.target.value as UiLanguage;
+                  dispatch(setUiLanguage(next));
+                  try {
+                    document.documentElement.lang = next;
+                    document.documentElement.dir =
+                      next === "ur" || next === "pa" || next === "ar" || next === "fa"
+                        ? "rtl"
+                        : "ltr";
+                  } catch {
+                    // ignore
+                  }
+                }}
               >
-                {UI_LANGUAGE_OPTIONS.map((o) => (
+                {languageOptions.map((o) => (
                   <option key={o.code} value={o.code}>
                     {o.label}
                   </option>
@@ -329,7 +356,9 @@ export function AppShell({
             </div>
           </header>
         ) : null}
-        {children}
+        <div key={pathname} className="animate-page">
+          {children}
+        </div>
       </div>
 
       <nav
@@ -343,13 +372,13 @@ export function AppShell({
             <Link
               key={l.href}
               href={l.href}
-              className={`relative px-1 text-center text-[0.65rem] font-semibold ${
+              className={`cmts-press relative px-1 text-center text-[0.65rem] font-semibold ${
                 active ? "text-forest" : "text-muted"
               }`}
             >
               {l.label}
               {l.href === "/notifications" && unread > 0 ? (
-                <span className="absolute right-1 top-0 h-2 w-2 rounded-full bg-brass" />
+                <span className="animate-pulse-dot absolute right-1 top-0 h-2 w-2 rounded-full bg-brass" />
               ) : null}
             </Link>
           );

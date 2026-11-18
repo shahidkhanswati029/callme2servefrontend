@@ -19,6 +19,7 @@ export type PublicAccount = {
   country: string;
   currency: string;
   package: PackageTier;
+  packageExpiresAt?: string | null;
   seat: Seat;
   placeLabel: string | null;
   photoUrl: string | null;

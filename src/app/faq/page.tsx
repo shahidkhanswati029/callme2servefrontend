@@ -19,11 +19,11 @@ const FAQS = [
   },
   {
     q: "What are the package rates?",
-    a: "Free 12%, Silver 9%, Gold 6%, Platinum 2% of the job total. Monthly package fees are separate ledger lines.",
+    a: "Job commission is 0% for free and paid experts for now. Package upgrade fees (Silver / Gold / Platinum) are separate. Commission rates can be turned on later without changing today’s receipts.",
   },
   {
     q: "How does referrer QR work?",
-    a: "Scan or open /?ref=CODE when joining. The referrer earns a share of commission; the working expert still receives the full net on the receipt.",
+    a: "Scan or open /?ref=CODE when joining. Referrers share package upgrade fees (50/50). When job commission is enabled later, referrer share comes from the company side — the working expert still receives the full net.",
   },
   {
     q: "Is Redis required?",

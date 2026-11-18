@@ -7,18 +7,20 @@ import { GuestOnly } from "@/modules/identity/components/AuthGuard";
 import { MarketingShell } from "@/modules/marketing/MarketingShell";
 import { marketingApi, type PublicExpert } from "@/modules/marketing/api";
 import { useAppSelector } from "@/store/hooks";
-import { t } from "@/shared/i18n";
+import { canonicalizeCity, mergeCitiesByCanonical, t, tDynamic, tExpertCard } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
+import { Reveal } from "@/shared/ui/Reveal";
 
 const QUICK = ["Tutor", "Surgical", "Leather", "Tailor", "Institute"];
 
 const FEATURES = [
-  { title: "Fair rates", blurb: "Free 12% · Silver 9% · Gold 6% · Platinum 2%", tone: "bg-forest text-paper" },
-  { title: "Fast ask", blurb: "Ask · accept · pay · receipt", tone: "bg-brass text-forest" },
-  { title: "Live place", blurb: "Real GPS pin on the map", tone: "bg-[#c45c6a] text-paper" },
-  { title: "Always on", blurb: "Inbox · jobs · alarms", tone: "bg-success text-paper" },
-  { title: "Shops live", blurb: "Pin + door photo to publish", tone: "bg-[#d97706] text-paper" },
-  { title: "Refer & earn", blurb: "QR share · company keeps commission", tone: "bg-[#5b4db8] text-paper" },
-];
+  { titleKey: "featureFairRates", blurbKey: "featureFairRatesBlurb", tone: "bg-forest text-paper" },
+  { titleKey: "featureFastAsk", blurbKey: "featureFastAskBlurb", tone: "bg-brass text-forest" },
+  { titleKey: "featureLivePlace", blurbKey: "featureLivePlaceBlurb", tone: "bg-[#c45c6a] text-paper" },
+  { titleKey: "featureAlwaysOn", blurbKey: "featureAlwaysOnBlurb", tone: "bg-success text-paper" },
+  { titleKey: "featureShopsLive", blurbKey: "featureShopsLiveBlurb", tone: "bg-[#d97706] text-paper" },
+  { titleKey: "featureReferEarn", blurbKey: "featureReferEarnBlurb", tone: "bg-[#5b4db8] text-paper" },
+] as const;
 
 const FALLBACK_CATS = [
   "Tutor",
@@ -48,12 +50,12 @@ function cityArt(city: string, index: number) {
     Dubai: CITY_GRADIENTS[4],
     London: CITY_GRADIENTS[5],
   };
-  return known[city] || CITY_GRADIENTS[index % CITY_GRADIENTS.length];
+  return known[canonicalizeCity(city) || city] || CITY_GRADIENTS[index % CITY_GRADIENTS.length];
 }
 
 export default function WelcomePage() {
   const router = useRouter();
-  const language = useAppSelector((s) => s.uiPrefs.language);
+  const language = useUiLanguage();
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
   const currency = useAppSelector((s) => s.uiPrefs.currency);
   const [serviceQ, setServiceQ] = useState("");
@@ -99,7 +101,7 @@ export default function WelcomePage() {
       marketingApi.search({ pageSize: 8, country: countryCode }),
     ]);
     setOverview(o.data.overview);
-    setCities(c.data.cities.slice(0, 8));
+    setCities(mergeCitiesByCanonical(c.data.cities).slice(0, 8));
     setCategories(cats.data.categories.slice(0, 8));
     setReviews(r.data.reviews);
     setFeatured(s.data.experts);
@@ -165,7 +167,7 @@ export default function WelcomePage() {
         <section className="relative overflow-hidden bg-forest text-paper">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-45"
+            className="pointer-events-none absolute inset-0 opacity-45 animate-fade"
             style={{
               background:
                 "radial-gradient(ellipse 70% 55% at 12% 15%, rgba(224,154,43,0.32), transparent 55%), radial-gradient(ellipse 45% 40% at 88% 8%, rgba(229,242,235,0.12), transparent 50%)",
@@ -173,23 +175,23 @@ export default function WelcomePage() {
           />
           <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
             <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
+              <p className="animate-rise text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
                 {t(language, "landingEyebrow")} · {countryCode} · {currency}
               </p>
-              <h1 className="font-display mt-3 text-[clamp(2.3rem,5vw,3.7rem)] font-bold leading-[1.06]">
+              <h1 className="animate-rise font-display mt-3 text-[clamp(2.3rem,5vw,3.7rem)] font-bold leading-[1.06] [animation-delay:70ms]">
                 {t(language, "findTrusted")}
               </h1>
-              <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#d5e0d8] sm:text-base">
+              <p className="animate-rise mt-4 max-w-xl text-sm leading-relaxed text-[#d5e0d8] sm:text-base [animation-delay:120ms]">
                 {t(language, "heroLede")}
               </p>
-              <div className="mt-6 flex flex-wrap gap-4 text-xs font-semibold text-[#d5e0d8]">
+              <div className="animate-rise mt-6 flex flex-wrap gap-4 text-xs font-semibold text-[#d5e0d8] [animation-delay:170ms]">
                 {[
                   t(language, "instantAsk"),
                   t(language, "verifiedPlace"),
                   t(language, "realReceipts"),
                 ].map((label) => (
                   <span key={label} className="inline-flex items-center gap-2">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-brass text-forest">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-brass text-forest animate-glow">
                       ✓
                     </span>
                     {label}
@@ -198,7 +200,7 @@ export default function WelcomePage() {
               </div>
               <Link
                 href="/login"
-                className="mt-8 inline-flex rounded-xl bg-brass px-5 py-3 text-sm font-bold uppercase tracking-wide text-forest shadow-[0_12px_32px_rgba(224,154,43,0.35)]"
+                className="cmts-press animate-rise mt-8 inline-flex rounded-xl bg-brass px-5 py-3 text-sm font-bold uppercase tracking-wide text-forest shadow-[0_12px_32px_rgba(224,154,43,0.35)] [animation-delay:220ms]"
               >
                 {t(language, "expertCta")}
               </Link>
@@ -206,14 +208,14 @@ export default function WelcomePage() {
 
             <form
               onSubmit={goSearch}
-              className="rounded-3xl border border-white/10 bg-cream p-5 text-ink shadow-[0_28px_70px_rgba(0,0,0,0.28)]"
+              className="animate-scale rounded-3xl border border-white/10 bg-cream p-5 text-ink shadow-[0_28px_70px_rgba(0,0,0,0.28)] [animation-delay:120ms]"
             >
               <h2 className="font-display text-xl font-bold">{t(language, "whatService")}</h2>
               <label className="mt-4 grid gap-1 text-sm font-semibold">
                 {t(language, "service")}
                 <input
                   className="rounded-xl border border-line bg-paper px-3 py-3 font-normal outline-none focus:border-forest"
-                  placeholder="Tutor, Surgical, Leather…"
+                  placeholder={`${tDynamic(language, "Tutor")}, ${tDynamic(language, "Surgical")}, ${tDynamic(language, "Leather")}…`}
                   value={serviceQ}
                   onChange={(e) => setServiceQ(e.target.value)}
                 />
@@ -229,7 +231,7 @@ export default function WelcomePage() {
               </label>
               <button
                 type="submit"
-                className="mt-4 w-full rounded-xl bg-forest py-3 text-sm font-semibold text-paper"
+                className="cmts-press mt-4 w-full rounded-xl bg-forest py-3 text-sm font-semibold text-paper"
               >
                 {t(language, "searchExpertsCta")}
               </button>
@@ -239,9 +241,9 @@ export default function WelcomePage() {
                     key={q}
                     type="button"
                     onClick={() => setServiceQ(q)}
-                    className="rounded-full border border-line bg-paper px-3 py-1 text-xs font-semibold text-muted hover:border-forest hover:text-forest"
+                    className="cmts-pill rounded-full border border-line bg-paper px-3 py-1 text-xs font-semibold text-muted hover:border-forest hover:text-forest"
                   >
-                    {q}
+                    {tDynamic(language, q)}
                   </button>
                 ))}
               </div>
@@ -259,52 +261,51 @@ export default function WelcomePage() {
 
         <section className="mx-auto -mt-1 grid max-w-6xl gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
           {[
-            [`${overview.experts}+`, "Verified experts"],
-            [`${overview.cities}+`, "Cities covered"],
-            [`${overview.online}`, "Online now"],
+            [`${overview.experts}+`, t(language, "verifiedExperts")],
+            [`${overview.cities}+`, t(language, "citiesCovered")],
+            [`${overview.online}`, t(language, "onlineNow")],
             [
-              overview.ratingCount
-                ? `${overview.ratingAvg.toFixed(1)}★`
-                : "—",
-              `${overview.ratingCount} reviews`,
+              overview.ratingCount ? `${overview.ratingAvg.toFixed(1)}★` : "—",
+              `${overview.ratingCount} ${t(language, "reviewsCount")}`,
             ],
-          ].map(([value, label]) => (
-            <div
-              key={label}
-              className="rounded-2xl border border-forest/15 bg-cream px-4 py-4 text-center shadow-sm"
-            >
-              <p className="font-display text-2xl font-bold text-forest">{value}</p>
-              <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
-                {label}
-              </p>
-            </div>
+          ].map(([value, label], i) => (
+            <Reveal key={label} delay={i * 80}>
+              <div className="cmts-card rounded-2xl border border-forest/15 bg-cream px-4 py-4 text-center shadow-sm">
+                <p className="font-display text-2xl font-bold text-forest">{value}</p>
+                <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+                  {label}
+                </p>
+              </div>
+            </Reveal>
           ))}
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="flex items-start gap-3 rounded-2xl border border-line bg-cream p-4"
-              >
-                <span
-                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-bold ${f.tone}`}
-                >
-                  {f.title.charAt(0)}
-                </span>
-                <div>
-                  <strong className="text-sm">{f.title}</strong>
-                  <p className="mt-0.5 text-sm text-muted">{f.blurb}</p>
-                </div>
-              </div>
-            ))}
+            {FEATURES.map((f, i) => {
+              const title = t(language, f.titleKey);
+              return (
+                <Reveal key={f.titleKey} delay={i * 70}>
+                  <div className="cmts-card flex items-start gap-3 rounded-2xl border border-line bg-cream p-4">
+                    <span
+                      className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-bold ${f.tone}`}
+                    >
+                      {title.charAt(0)}
+                    </span>
+                    <div>
+                      <strong className="text-sm">{title}</strong>
+                      <p className="mt-0.5 text-sm text-muted">{t(language, f.blurbKey)}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
           <p className="inline-block rounded-md bg-brass px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-forest">
-            Categories
+            {t(language, "categories")}
           </p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-display text-3xl font-bold">{t(language, "popularCategories")}</h2>
@@ -317,11 +318,13 @@ export default function WelcomePage() {
               <Link
                 key={c.name}
                 href={`/search?category=${encodeURIComponent(c.name)}`}
-                className="rounded-2xl border border-line bg-cream px-4 py-5 transition hover:border-forest"
+                className="cmts-card rounded-2xl border border-line bg-cream px-4 py-5"
               >
-                <p className="font-semibold">{c.name}</p>
+                <p className="font-semibold">{tDynamic(language, c.name)}</p>
                 <p className="mt-1 text-xs text-muted">
-                  {c.experts} expert{c.experts === 1 ? "" : "s"} · {currency}
+                  {c.experts}{" "}
+                  {c.experts === 1 ? t(language, "expertSingular") : t(language, "expertsLabel")} ·{" "}
+                  {currency}
                 </p>
               </Link>
             ))}
@@ -332,18 +335,18 @@ export default function WelcomePage() {
           <section className="border-y border-line bg-mint/35 py-12">
             <div className="mx-auto max-w-6xl px-4 sm:px-6">
               <h2 className="font-display text-3xl font-bold">
-                Experts in {countryCode}
+                {t(language, "expertsInCountry")} {countryCode}
               </h2>
-              <p className="mt-1 text-sm text-muted">
-                Live pins for this country · top rankings highlighted.
-              </p>
+              <p className="mt-1 text-sm text-muted">{t(language, "livePinsCountry")}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {featured.map((e) => (
                   <Link
                     key={e.id}
                     href={`/search?q=${encodeURIComponent(e.name)}&country=${countryCode}`}
-                    className={`rounded-2xl border bg-cream p-4 ${
-                      e.topRanked ? "border-brass shadow-[0_8px_24px_rgba(224,154,43,0.22)]" : "border-line"
+                    className={`cmts-card rounded-2xl border bg-cream p-4 ${
+                      e.topRanked
+                        ? "border-brass shadow-[0_8px_24px_rgba(224,154,43,0.22)]"
+                        : "border-line"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -361,15 +364,14 @@ export default function WelcomePage() {
                       )}
                       <div>
                         <strong className="text-sm">{e.name}</strong>
-                        <p className="text-xs text-muted">
-                          {e.work || "Expert"} · {e.city || "—"}
-                        </p>
+                        <p className="text-xs text-muted">{tExpertCard(language, e)}</p>
                       </div>
                     </div>
                     <p className="mt-3 text-xs font-semibold text-brass-deep">
                       ★ {Number(e.rating || 0).toFixed(1)} ({e.ratingCount})
-                      {e.isOnline ? " · Online" : ""}
+                      {e.isOnline ? ` · ${t(language, "online")}` : ` · ${t(language, "offline")}`}
                       {e.topRanked ? ` · ${t(language, "topRanked")}` : ""}
+                      {` · ${tDynamic(language, e.package)}`}
                     </p>
                   </Link>
                 ))}
@@ -387,7 +389,7 @@ export default function WelcomePage() {
           </h2>
           {reviews.length === 0 ? (
             <p className="mx-auto mt-6 max-w-lg text-center text-sm text-muted">
-              Reviews appear here after real completed jobs are rated — nothing invented.
+              {t(language, "reviewsEmpty")}
             </p>
           ) : (
             <>
@@ -397,10 +399,11 @@ export default function WelcomePage() {
                     key={r.id}
                     className="rounded-2xl border border-line bg-cream p-5 shadow-sm"
                   >
-                    <p className="text-brass">{"★".repeat(r.stars)}{"☆".repeat(5 - r.stars)}</p>
-                    <p className="mt-3 text-sm leading-relaxed text-ink">
-                      “{r.text}”
+                    <p className="text-brass">
+                      {"★".repeat(r.stars)}
+                      {"☆".repeat(5 - r.stars)}
                     </p>
+                    <p className="mt-3 text-sm leading-relaxed text-ink">“{r.text}”</p>
                     <div className="mt-4 flex items-center gap-3">
                       {r.from.photoUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -417,8 +420,9 @@ export default function WelcomePage() {
                       <div>
                         <strong className="text-sm">{r.from.name}</strong>
                         <p className="text-xs text-muted">
-                          {r.from.work || "Expert"}
-                          {r.from.city ? ` · ${r.from.city}` : ""} · rated {r.about.name}
+                          {tDynamic(language, r.from.work) || t(language, "experts")}
+                          {r.from.city ? ` · ${tDynamic(language, r.from.city)}` : ""} ·{" "}
+                          {r.about.name}
                         </p>
                       </div>
                     </div>
@@ -426,8 +430,8 @@ export default function WelcomePage() {
                 ))}
               </div>
               <p className="mt-6 text-center text-sm font-semibold text-muted">
-                {overview.ratingAvg.toFixed(1)} from {overview.ratingCount} review
-                {overview.ratingCount === 1 ? "" : "s"}
+                {overview.ratingAvg.toFixed(1)} · {overview.ratingCount}{" "}
+                {t(language, "reviewsCount")}
               </p>
             </>
           )}
@@ -436,45 +440,49 @@ export default function WelcomePage() {
         <section className="border-t border-line bg-paper py-14">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-center text-[0.7rem] font-bold uppercase tracking-[0.14em] text-brass-deep">
-              Coverage
+              {t(language, "cities")}
             </p>
             <h2 className="font-display mt-2 text-center text-3xl font-bold">
               {t(language, "citiesWeServe")}
             </h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {cities.map((c, i) => (
-                <div
-                  key={c.city}
-                  className="overflow-hidden rounded-2xl border border-line bg-cream shadow-sm"
-                >
+              {cities.map((c, i) => {
+                const cityCanon = canonicalizeCity(c.city) || c.city;
+                return (
+                <Reveal key={cityCanon} delay={i * 90}>
+                <div className="cmts-card overflow-hidden rounded-2xl border border-line bg-cream shadow-sm">
                   <div
                     className={`flex h-36 items-end bg-gradient-to-br px-4 py-3 text-paper ${cityArt(
-                      c.city,
+                      cityCanon,
                       i,
                     )}`}
                   >
-                    <h3 className="font-display text-2xl font-bold">{c.city}</h3>
+                    <h3 className="font-display text-2xl font-bold">
+                      {tDynamic(language, cityCanon)}
+                    </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-2 px-4 py-3 text-center text-sm">
                     <div>
                       <p className="font-display text-xl font-bold text-forest">{c.experts}</p>
-                      <p className="text-xs text-muted">Experts</p>
+                      <p className="text-xs text-muted">{t(language, "expertsLabel")}</p>
                     </div>
                     <div>
                       <p className="font-display text-xl font-bold text-forest">{c.shops}</p>
-                      <p className="text-xs text-muted">Live shops</p>
+                      <p className="text-xs text-muted">{t(language, "shops")}</p>
                     </div>
                   </div>
                   <div className="px-4 pb-4">
                     <Link
-                      href={`/search?city=${encodeURIComponent(c.city)}&country=${countryCode}`}
-                      className="block rounded-xl bg-forest py-2.5 text-center text-sm font-semibold text-paper"
+                      href={`/search?city=${encodeURIComponent(cityCanon)}&country=${countryCode}`}
+                      className="cmts-press block rounded-xl bg-forest py-2.5 text-center text-sm font-semibold text-paper"
                     >
-                      {t(language, "explore")} {c.city}
+                      {t(language, "explore")} {tDynamic(language, cityCanon)}
                     </Link>
                   </div>
                 </div>
-              ))}
+                </Reveal>
+              );
+              })}
             </div>
             <p className="mt-6 text-center text-sm text-muted">
               <Link href="/contact" className="font-semibold text-forest underline">

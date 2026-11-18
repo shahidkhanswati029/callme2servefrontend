@@ -2,6 +2,8 @@
 
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
+import { useUiLanguage } from "@/shared/useUiLanguage";
+import { isRtl } from "@/shared/i18n";
 
 export function MarketingShell({
   children,
@@ -10,10 +12,18 @@ export function MarketingShell({
   children: React.ReactNode;
   supportBanner?: boolean;
 }) {
+  const lang = useUiLanguage();
+
   return (
-    <div className="min-h-[100dvh] bg-paper text-ink">
+    <div
+      key={lang}
+      lang={lang}
+      dir={isRtl(lang) ? "rtl" : "ltr"}
+      translate="no"
+      className="notranslate min-h-[100dvh] bg-paper text-ink"
+    >
       <SiteHeader supportBanner={supportBanner} />
-      <main>{children}</main>
+      <main className="animate-page">{children}</main>
       <SiteFooter />
     </div>
   );

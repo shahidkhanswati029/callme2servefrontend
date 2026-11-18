@@ -93,9 +93,12 @@ export function PayJobModal({ job, busy, onCancel, onPay }: Props) {
         <div className="p-5">
           <h3 className="font-display text-xl font-bold text-ink">Enter payment details</h3>
           <p className="mt-1 text-sm text-muted">
-            Pay {job.currency} {total.toLocaleString()} to complete this job. Company commission{" "}
-            {job.currency} {job.commission.toLocaleString()}. Cash is not available. Payment
-            releases to the expert automatically — desk does not approve.
+            Pay {job.currency} {total.toLocaleString()} to complete this job.
+            {job.commission > 0
+              ? ` Company commission ${job.currency} ${job.commission.toLocaleString()}.`
+              : ""}{" "}
+            Cash is not available. Payment releases to the expert automatically — desk does not
+            approve.
           </p>
 
           <label className="mt-4 grid gap-1 text-sm font-semibold">

@@ -71,12 +71,14 @@ function Inner() {
             (PKR 1,500 / 3,500 / 6,000).
           </li>
           <li>
-            <strong className="text-ink">Job commission</strong> — Free 12%, Silver 9%, Gold 6%,
-            Platinum 2% of quotation + visit fee.
+            <strong className="text-ink">Job commission</strong> — 0% for FREE and paid packages
+            right now. Planned later (not charged): Free 12% · Silver 9% · Gold 6% · Platinum 2%.
+            Flip <code className="text-xs">jobCommissionEnabled</code> in monetization config when ready.
           </li>
           <li>
-            <strong className="text-ink">Referral share</strong> — 25% of that commission (default)
-            goes to the referrer for 6 months; company keeps the rest. Expert net is never shrunk.
+            <strong className="text-ink">Referral share</strong> — when commission is on, a share
+            of company commission can go to the referrer; expert net is never shrunk. Package
+            upgrades already split 50/50 with the referrer.
           </li>
           <li>
             Desk only <strong className="text-ink">releases payouts</strong> — pending queue PKR{" "}

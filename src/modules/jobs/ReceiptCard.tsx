@@ -64,12 +64,14 @@ export function ReceiptCard({
           <span className="font-semibold">Together</span>
           <strong>{money(receipt.total)}</strong>
         </div>
-        <div className="flex justify-between gap-3">
-          <span className="text-muted">
-            {receipt.packageTier || "Package"} {receipt.packageRate}% kept
-          </span>
-          <span className="text-brass-deep">{money(receipt.commission)}</span>
-        </div>
+        {receipt.commission > 0 ? (
+          <div className="flex justify-between gap-3">
+            <span className="text-muted">
+              {receipt.packageTier || "Package"} {receipt.packageRate}% kept
+            </span>
+            <span className="text-brass-deep">{money(receipt.commission)}</span>
+          </div>
+        ) : null}
         <div className="rounded-xl bg-mint px-3 py-3">
           <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-brass-deep">
             Worker receives

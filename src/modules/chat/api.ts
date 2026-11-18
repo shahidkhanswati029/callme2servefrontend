@@ -134,17 +134,28 @@ function looksLikeVideo(file: File, kindHint?: string) {
   return /\.(mp4|webm|mov|m4v|avi|mkv|mpeg|mpg|3gp)$/i.test(file.name);
 }
 
-export async function uploadMedia(file: File, kindHint?: "IMAGE" | "VIDEO" | "VOICE") {
+export async function uploadMedia(
+  file: File,
+  kindHint?: "IMAGE" | "VIDEO" | "VOICE",
+  opts?: { purpose?: "QUOTATION" | "CHAT" },
+) {
   const token = getAccessToken();
   const fd = new FormData();
   fd.append("file", file);
   if (kindHint) fd.append("kind", kindHint);
+  if (opts?.purpose) fd.append("purpose", opts.purpose);
 
+  const maxSec = opts?.purpose === "QUOTATION" ? 50.05 : 30.05;
   let durationS: number | undefined;
   if (looksLikeVideo(file, kindHint)) {
     durationS = await readVideoDuration(file);
-    if (typeof durationS === "number" && Number.isFinite(durationS) && durationS > 30.05) {
-      throw new ApiError("Video stops at 30 seconds", "VIDEO_CAP");
+    if (typeof durationS === "number" && Number.isFinite(durationS) && durationS > maxSec) {
+      throw new ApiError(
+        opts?.purpose === "QUOTATION"
+          ? "Quotation video stops at 50 seconds"
+          : "Video stops at 30 seconds",
+        "VIDEO_CAP",
+      );
     }
     if (typeof durationS === "number" && Number.isFinite(durationS) && durationS > 0) {
       fd.append("durationS", String(durationS));

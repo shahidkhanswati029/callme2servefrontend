@@ -24,8 +24,9 @@ export default function AboutPage() {
             Language is separate from currency. Debit card is a rail; cash is not offered.
           </p>
           <p>
-            We grow city by city worldwide. Packages stay Free 12%, Silver 9%, Gold 6%, Platinum
-            2%. Referrers earn a share of commission without shrinking the worker&apos;s receipt.
+            We grow city by city worldwide. Job commission is 0% for free and paid experts for
+            now — rates can be turned on later without changing receipts today. Referrers share
+            package fees when someone upgrades; worker net is never shrunk by referral.
           </p>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">

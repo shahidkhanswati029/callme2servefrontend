@@ -12,14 +12,22 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new ApiError(
+      "We can’t reach the server. Check your connection and try again.",
+      "NETWORK_ERROR",
+    );
+  }
 
   let json: {
     success?: boolean;
@@ -30,7 +38,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     json = await res.json();
   } catch {
-    throw new ApiError("Server returned an invalid response");
+    throw new ApiError(
+      res.status >= 500
+        ? "The server hit a problem. Please try again in a moment."
+        : "Server returned an invalid response",
+      res.status >= 500 ? "SERVER_ERROR" : "INVALID_RESPONSE",
+    );
   }
 
   if (!res.ok || json.success === false) {

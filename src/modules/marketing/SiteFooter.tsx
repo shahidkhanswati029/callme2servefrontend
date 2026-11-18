@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { BrandMark } from "@/modules/identity/components/BrandMark";
 import { useAppSelector } from "@/store/hooks";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export function SiteFooter() {
+  const lang = useUiLanguage();
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
   const currency = useAppSelector((s) => s.uiPrefs.currency);
 
@@ -15,10 +18,7 @@ export function SiteFooter() {
           <div className="[&_h1]:text-paper [&_p]:text-brass [&_.bg-forest]:bg-[#14332b]">
             <BrandMark compact />
           </div>
-          <p className="mt-3 text-sm leading-relaxed text-[#d5e0d8]">
-            CallMe2Serve connects people with nearby experts — ask for work, open a shop, pay with
-            real rails, and keep commission honest.
-          </p>
+          <p className="mt-3 text-sm leading-relaxed text-[#d5e0d8]">{t(lang, "footerLede")}</p>
           <p className="mt-3 text-xs font-semibold text-brass">
             {countryCode} · {currency}
           </p>
@@ -26,7 +26,7 @@ export function SiteFooter() {
             {["Fb", "X", "In", "Ig"].map((s) => (
               <span
                 key={s}
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-[#d5e0d8]"
+                className="cmts-press grid h-9 w-9 place-items-center rounded-full border border-white/20 text-[#d5e0d8]"
               >
                 {s}
               </span>
@@ -35,71 +35,77 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">Quick links</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">
+            {t(lang, "quickLinks")}
+          </h3>
           <ul className="mt-3 grid gap-2 text-sm text-[#d5e0d8]">
             <li>
               <Link href="/about" className="hover:text-paper">
-                About
+                {t(lang, "about")}
               </Link>
             </li>
             <li>
               <Link href="/how-it-works" className="hover:text-paper">
-                How it works
+                {t(lang, "howItWorks")}
               </Link>
             </li>
             <li>
               <Link href="/login" className="hover:text-paper">
-                Become an expert
+                {t(lang, "becomeExpert")}
               </Link>
             </li>
             <li>
               <Link href="/login" className="hover:text-paper">
-                Become an expert / refer
+                {t(lang, "becomeExpertRefer")}
               </Link>
             </li>
             <li>
               <Link href="/categories" className="hover:text-paper">
-                Categories
+                {t(lang, "categories")}
               </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">Support</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">
+            {t(lang, "support")}
+          </h3>
           <ul className="mt-3 grid gap-2 text-sm text-[#d5e0d8]">
             <li>
               <Link href="/contact" className="hover:text-paper">
-                Contact
+                {t(lang, "contact")}
               </Link>
             </li>
             <li>
               <Link href="/faq" className="hover:text-paper">
-                FAQ
+                {t(lang, "faq")}
               </Link>
             </li>
             <li>
               <Link href="/terms" className="hover:text-paper">
-                Terms of service
+                {t(lang, "termsOfService")}
               </Link>
             </li>
             <li>
               <Link href="/privacy" className="hover:text-paper">
-                Privacy policy
+                {t(lang, "privacyPolicy")}
               </Link>
             </li>
             <li>
               <Link href="/desk/login" className="hover:text-paper">
-                Desk seat
+                {t(lang, "deskSeat")}
               </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">Contact us</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-brass">
+            {t(lang, "contactUs")}
+          </h3>
           <ul className="mt-3 grid gap-2 text-sm text-[#d5e0d8]">
-            <li>Live experts · global cities</li>
+            <li>{t(lang, "liveExpertsGlobal")}</li>
             <li>
               <a href="mailto:hello@callme2serve.com" className="hover:text-paper">
                 hello@callme2serve.com
@@ -107,14 +113,14 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/contact" className="font-semibold text-brass hover:text-paper">
-                Send a message →
+                {t(lang, "sendMessage")}
               </Link>
             </li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-[#d5e0d8]">
-        © {new Date().getFullYear()} CallMe2Serve. All rights reserved.
+        © {new Date().getFullYear()} {t(lang, "brandName")}. {t(lang, "allRightsReserved")}
       </div>
     </footer>
   );

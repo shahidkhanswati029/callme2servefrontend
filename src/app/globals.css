@@ -57,10 +57,11 @@ body {
   font-family: var(--font-noto-serif), Georgia, serif;
 }
 
+/* ——— Motion system (frontend polish; reduced-motion safe) ——— */
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -68,8 +69,100 @@ body {
   }
 }
 
-.animate-rise {
-  animation: rise 0.45s ease both;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes glow-brass {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(224, 154, 43, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(224, 154, 43, 0.18);
+  }
+}
+
+@keyframes drawer-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes shimmer {
@@ -81,11 +174,197 @@ body {
   }
 }
 
+@keyframes progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade {
+  animation: fade-in 0.45s ease both;
+}
+
+.animate-scale {
+  animation: scale-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-page {
+  animation: page-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-drawer {
+  animation: drawer-down 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-float {
+  animation: float-y 3.6s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: soft-pulse 1.8s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow-brass 2.4s ease-in-out infinite;
+}
+
 .skeleton {
   @apply rounded-lg;
   background: linear-gradient(90deg, var(--line) 0%, var(--cream) 45%, var(--line) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease infinite;
+}
+
+/* Scroll / mount reveal (used by Reveal component) */
+.cmts-reveal {
+  opacity: 0;
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.cmts-reveal--rise {
+  transform: translateY(18px);
+}
+.cmts-reveal--fade {
+  transform: none;
+}
+.cmts-reveal--scale {
+  transform: scale(0.96);
+}
+.cmts-reveal--slide-left {
+  transform: translateX(22px);
+}
+.cmts-reveal--slide-right {
+  transform: translateX(-22px);
+}
+.cmts-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Interactive polish */
+.cmts-press {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+.cmts-press:hover {
+  transform: translateY(-2px);
+}
+.cmts-press:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.cmts-card {
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+}
+.cmts-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(26, 40, 34, 0.1);
+  border-color: color-mix(in srgb, var(--forest) 45%, var(--line));
+}
+
+.cmts-nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.cmts-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cmts-nav-link:hover::after,
+.cmts-nav-link.is-active::after {
+  transform: scaleX(1);
+}
+
+.cmts-pill {
+  transition:
+    transform 0.18s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.cmts-pill:hover {
+  transform: translateY(-1px);
+}
+.cmts-pill:active {
+  transform: scale(0.97);
+}
+
+.cmts-sidebar-link {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s ease,
+    padding-left 0.18s ease;
+}
+.cmts-sidebar-link:hover {
+  transform: translateX(2px);
+}
+
+.cmts-progress > * {
+  transform-origin: left center;
+  animation: progress-fill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .animate-fade,
+  .animate-scale,
+  .animate-page,
+  .animate-drawer,
+  .animate-float,
+  .animate-pulse-dot,
+  .animate-glow,
+  .skeleton {
+    animation: none !important;
+  }
+  .cmts-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .cmts-press:hover,
+  .cmts-press:active,
+  .cmts-card:hover,
+  .cmts-pill:hover,
+  .cmts-pill:active,
+  .cmts-sidebar-link:hover,
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none !important;
+  }
+  .cmts-nav-link::after {
+    transition: none !important;
+  }
+  .cmts-progress > * {
+    animation: none !important;
+  }
 }
 
 html[data-theme="dark"] .btn-primary {
@@ -107,9 +386,23 @@ html[data-theme="dark"] .btn-primary {
 }
 .btn {
   @apply inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-[0.95rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 .btn-primary {
   @apply bg-forest text-paper;
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 10px 24px rgba(27, 60, 51, 0.28);
 }
 .btn-google {
   @apply border border-line bg-cream text-ink;

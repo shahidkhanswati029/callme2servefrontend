@@ -9,10 +9,12 @@ import { marketingApi, type PublicExpert } from "@/modules/marketing/api";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useAppSelector } from "@/store/hooks";
+import { t, tDynamic, tExpertCard } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<Loader full label="Opening search…" />}>
+    <Suspense fallback={<Loader full label="…" />}>
       <Inner />
     </Suspense>
   );
@@ -21,6 +23,7 @@ export default function SearchPage() {
 function Inner() {
   const router = useRouter();
   const params = useSearchParams();
+  const lang = useUiLanguage();
   const currency = useAppSelector((s) => s.uiPrefs.currency);
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
   const [q, setQ] = useState(params.get("q") || "");
@@ -81,9 +84,9 @@ function Inner() {
   return (
     <MarketingShell>
       <PageHero
-        eyebrow="Live directory"
-        title="Search experts"
-        lede="Results come from real expert accounts with a saved place pin — not sample cards."
+        eyebrow={t(lang, "liveDirectory")}
+        title={t(lang, "searchExpertsCta")}
+        lede={t(lang, "findTrusted")}
       />
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <form
@@ -92,19 +95,19 @@ function Inner() {
         >
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
-            placeholder="Name, work, place…"
+            placeholder={t(lang, "searchExperts")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
-            placeholder="City"
+            placeholder={t(lang, "city")}
             value={city}
             onChange={(e) => setCity(e.target.value)}
           />
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
-            placeholder="Category / work"
+            placeholder={t(lang, "category")}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
@@ -112,37 +115,38 @@ function Inner() {
             type="submit"
             className="rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-paper"
           >
-            Search
+            {t(lang, "search")}
           </button>
         </form>
 
         <p className="mt-4 text-sm text-muted">
-          {total} expert{total === 1 ? "" : "s"} in {countryCode}
-          {liveShops ? ` · ${liveShops} live shop${liveShops === 1 ? "" : "s"}` : ""} · amounts in{" "}
-          {currency}
+          {total} {total === 1 ? t(lang, "expertSingular") : t(lang, "expertsLabel")} ·{" "}
+          {countryCode}
+          {liveShops ? ` · ${liveShops} ${t(lang, "shops")}` : ""} · {currency}
         </p>
 
         {loading ? (
-          <Loader label="Searching live experts…" />
+          <Loader label={t(lang, "findingExperts")} />
         ) : error ? (
           <p className="mt-4 rounded-2xl border border-line bg-cream p-4 text-sm text-brass-deep">
             {error}
           </p>
         ) : experts.length === 0 ? (
           <p className="mt-4 rounded-2xl border border-line bg-cream p-4 text-sm text-muted">
-            No experts match. Try another city or category, or{" "}
+            {t(lang, "noExpertsMatch")}{" "}
             <Link href="/login" className="font-semibold text-forest underline">
-              sign in
-            </Link>{" "}
-            to set your pin and see the 5 km map.
+              {t(lang, "signIn")}
+            </Link>
           </p>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {experts.map((e) => (
               <article
                 key={e.id}
-                className={`rounded-2xl border bg-cream p-4 transition hover:border-forest ${
-                  e.topRanked ? "border-brass shadow-[0_8px_20px_rgba(224,154,43,0.2)]" : "border-line"
+                className={`cmts-card rounded-2xl border bg-cream p-4 ${
+                  e.topRanked
+                    ? "border-brass shadow-[0_8px_20px_rgba(224,154,43,0.2)]"
+                    : "border-line"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -163,18 +167,17 @@ function Inner() {
                       <strong className="truncate">{e.name}</strong>
                       {e.topRanked ? (
                         <span className="rounded-md bg-brass px-1.5 py-0.5 text-[0.55rem] font-bold uppercase text-forest">
-                          Top
+                          {t(lang, "topRanked")}
                         </span>
                       ) : null}
                       <span
                         className={`h-2 w-2 rounded-full ${e.isOnline ? "bg-success" : "bg-line"}`}
                       />
                     </div>
-                    <p className="text-sm text-muted">
-                      {e.work || "Expert"} · {e.placeLabel || e.city || "—"}
-                    </p>
+                    <p className="text-sm text-muted">{tExpertCard(lang, e)}</p>
                     <p className="mt-1 text-xs font-semibold text-brass-deep">
-                      ★ {Number(e.rating || 0).toFixed(1)} ({e.ratingCount}) · {e.package}
+                      ★ {Number(e.rating || 0).toFixed(1)} ({e.ratingCount}) ·{" "}
+                      {tDynamic(lang, e.package)}
                     </p>
                   </div>
                 </div>
@@ -182,7 +185,7 @@ function Inner() {
                   href="/login"
                   className="mt-4 inline-flex rounded-lg bg-forest px-3 py-1.5 text-xs font-semibold text-paper"
                 >
-                  Sign in to message / ask
+                  {t(lang, "signIn")}
                 </Link>
               </article>
             ))}

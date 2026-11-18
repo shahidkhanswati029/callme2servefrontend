@@ -18,6 +18,9 @@ type ReferData = {
   referredCount: number;
   referralBalance: number;
   currency: string;
+  package?: string;
+  nextMilestone?: { need: number; tier: string } | null;
+  inquiries?: string;
   referred: Array<{
     id: string;
     name: string;
@@ -108,11 +111,12 @@ function Inner() {
   return (
     <AppShell title="Refer">
       <p className="mb-4 text-sm text-muted">
-        Share your QR / code. For {data.durationMonths} months you receive {data.sharePercent}% of
-        company commission on their completed jobs. Their payout does not shrink. No Stripe.
+        Share your QR / code. 10 referrals → Silver, 20 → Gold, 30 → Platinum (auto, 1 year). When a
+        referred expert pays a subscription, you get {data.sharePercent}% and the company keeps the
+        rest. Inquiries: {data.inquiries || "Unlimited"}.
       </p>
 
-      <div className="mb-4 grid gap-3 rounded-2xl border border-line bg-cream p-4 sm:grid-cols-3">
+      <div className="mb-4 grid gap-3 rounded-2xl border border-line bg-cream p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="text-xs font-semibold uppercase text-brass-deep">Your code</p>
           <strong className="mt-1 block text-xl">{data.code || "—"}</strong>
@@ -125,6 +129,14 @@ function Inner() {
           <p className="text-xs font-semibold uppercase text-brass-deep">Referral balance</p>
           <strong className="mt-1 block text-xl">
             {data.currency} {Number(data.referralBalance || 0).toLocaleString()}
+          </strong>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase text-brass-deep">Next unlock</p>
+          <strong className="mt-1 block text-sm">
+            {data.nextMilestone
+              ? `${data.nextMilestone.need} more → ${data.nextMilestone.tier}`
+              : `${data.package || account.package} max`}
           </strong>
         </div>
       </div>

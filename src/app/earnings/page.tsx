@@ -52,6 +52,14 @@ function Inner() {
   const [cardName, setCardName] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvc, setCardCvc] = useState("");
+  const [rates, setRates] = useState<{
+    packages?: Record<string, number>;
+    packageUpgradeUsd?: Record<string, number>;
+    inquiries?: Record<string, string>;
+    radiusKm?: Record<string, number>;
+    packageDurationMonths?: number;
+    jobCommissionEnabled?: boolean;
+  } | null>(null);
 
   const authHeaders = () => {
     const token = getAccessToken();
@@ -63,19 +71,27 @@ function Inner() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/payments/earnings`, {
-        credentials: "include",
-        headers: authHeaders(),
-      });
-      const json = await res.json();
-      if (!res.ok || json.success === false) throw new Error(json.error?.message || "Failed");
+      const [earnRes, ratesRes] = await Promise.all([
+        fetch(`${API_URL}/api/payments/earnings`, {
+          credentials: "include",
+          headers: authHeaders(),
+        }),
+        fetch(`${API_URL}/api/payments/rates?currency=${encodeURIComponent(account.currency)}`, {
+          credentials: "include",
+          headers: authHeaders(),
+        }),
+      ]);
+      const json = await earnRes.json();
+      if (!earnRes.ok || json.success === false) throw new Error(json.error?.message || "Failed");
       setData(json.data);
+      const ratesJson = await ratesRes.json();
+      if (ratesRes.ok && ratesJson.success !== false) setRates(ratesJson.data);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load earnings");
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [account.currency, toast]);
 
   useEffect(() => {
     void load();
@@ -197,10 +213,10 @@ function Inner() {
       <section className="mb-4 rounded-2xl border border-line bg-mint p-4 text-sm text-ink">
         <h3 className="font-display text-lg font-bold">Payments & company passive income</h3>
         <p className="mt-1 text-muted">
-          You earn job net + referral share. Company earns package fees + commission (minus
-          referral). Job pay auto-releases — desk does not approve. Rails: JazzCash, Easypaisa,
-          Google Pay, PayPal, debit card (Stripe in live). Default is sandbox (no real money);
-          production needs merchant keys + PAYMENTS_MODE=live.
+          You earn full job net (commission is 0% for free and paid packages for now) + referral
+          package share. Company earns package upgrade fees; job commission can be enabled later.
+          Job pay auto-releases — desk does not approve. Rails: JazzCash, Easypaisa, Google Pay,
+          PayPal, debit card (Stripe in live).
         </p>
       </section>
 
@@ -222,6 +238,12 @@ function Inner() {
 
       <section className="mb-6 rounded-2xl border border-line bg-cream p-4">
         <h3 className="font-display text-lg font-bold">Pay package</h3>
+        <p className="mt-1 text-xs text-muted">
+          USD base: Silver $6 · Gold $12 · Platinum $19 · charged in {account.currency} ·{" "}
+          {rates?.packageDurationMonths || 12} months · inquiries{" "}
+          {rates?.inquiries?.[pkg] || "Unlimited"}
+          {rates?.jobCommissionEnabled ? " · job commission on" : ""}
+        </p>
         <form className="mt-3 grid gap-3" onSubmit={payPackage}>
           <div className="flex flex-wrap gap-2">
             {(["SILVER", "GOLD", "PLATINUM"] as const).map((p) => (
@@ -234,6 +256,10 @@ function Inner() {
                 }`}
               >
                 {p}
+                {rates?.packages?.[p] != null
+                  ? ` · ${account.currency} ${Number(rates.packages[p]).toLocaleString()}`
+                  : ""}
+                {rates?.radiusKm?.[p] != null ? ` · ${rates.radiusKm[p]} km` : ""}
               </button>
             ))}
           </div>

@@ -19,21 +19,44 @@ export async function apiFetch<T = Json>(
   retried = false,
 ): Promise<{ res: Response; json: T & Json }> {
   const token = getAccessToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    const json = {
+      success: false,
+      error: {
+        code: "NETWORK_ERROR",
+        message: "We can’t reach the server. Check your connection and try again.",
+      },
+    } as T & Json;
+    return {
+      res: new Response(null, { status: 503, statusText: "Network Error" }),
+      json,
+    };
+  }
 
   let json = {} as T & Json;
   try {
     json = (await res.json()) as T & Json;
   } catch {
-    // non-json
+    if (res.status >= 500) {
+      json = {
+        success: false,
+        error: {
+          code: "SERVER_ERROR",
+          message: "The server hit a problem. Please try again in a moment.",
+        },
+      } as T & Json;
+    }
   }
 
   if (res.status === 401 && !retried) {

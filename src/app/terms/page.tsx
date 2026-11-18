@@ -17,9 +17,9 @@ export default function TermsPage() {
           and never store full debit card numbers outside tokenised last4 flows.
         </p>
         <p>
-          The company keeps package fees and job commission at the published package rate.
-          Referrer shares come from the company side of commission and do not shrink the worker
-          receipt.
+          The company keeps package upgrade fees. Job commission is 0% for free and paid experts
+          until rates are enabled later; when enabled, the published package rate applies.
+          Referrer shares come from the company side and do not shrink the worker receipt.
         </p>
         <p>
           Desk may hold a shop for safety. Desk does not approve ordinary job payments. Quiet hours

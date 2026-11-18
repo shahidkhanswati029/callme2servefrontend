@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className={`animate-rise overflow-hidden rounded-[0.85rem] border border-line bg-cream text-[0.92rem] font-semibold text-ink shadow-[0_16px_40px_rgba(26,40,34,0.16)]`}
+            className={`animate-scale overflow-hidden rounded-[0.85rem] border border-line bg-cream text-[0.92rem] font-semibold text-ink shadow-[0_16px_40px_rgba(26,40,34,0.16)]`}
           >
             <div
               className={`h-1 w-full ${

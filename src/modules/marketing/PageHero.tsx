@@ -11,20 +11,22 @@ export function PageHero({
     <section className="relative overflow-hidden bg-forest text-paper">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0 opacity-40 animate-fade"
         style={{
           background:
             "radial-gradient(ellipse 70% 60% at 20% 0%, rgba(224,154,43,0.28), transparent 55%)",
         }}
       />
       <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
+        <p className="animate-rise text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
           {eyebrow}
         </p>
-        <h1 className="font-display mt-2 max-w-3xl text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight">
+        <h1 className="animate-rise font-display mt-2 max-w-3xl text-[clamp(2rem,4vw,3.2rem)] font-bold leading-tight [animation-delay:80ms]">
           {title}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#d5e0d8] sm:text-base">{lede}</p>
+        <p className="animate-rise mt-3 max-w-2xl text-sm leading-relaxed text-[#d5e0d8] sm:text-base [animation-delay:140ms]">
+          {lede}
+        </p>
       </div>
       <svg
         className="relative block w-full text-paper"

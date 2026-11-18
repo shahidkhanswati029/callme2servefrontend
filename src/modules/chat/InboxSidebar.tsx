@@ -43,7 +43,7 @@ export function InboxSidebar({
   activeOtherId?: string;
 }) {
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col border-r border-line bg-cream">
+    <aside className="flex h-full min-h-0 w-full min-w-0 flex-col border-r border-line bg-cream">
       <div className="shrink-0 border-b border-line px-4 py-3">
         <h2 className="font-display text-xl font-bold text-ink">Chats</h2>
         <p className="text-xs text-muted">Experts you messaged</p>
@@ -67,8 +67,8 @@ export function InboxSidebar({
               <Link
                 key={c.id}
                 href={`/inbox/${c.other.id}`}
-                className={`flex items-center gap-3 border-b border-line/70 px-3 py-3 ${
-                  active ? "bg-mint" : "hover:bg-paper"
+                className={`flex items-center gap-3 border-b border-line/70 px-3 py-3 transition-colors ${
+                  active ? "bg-mint" : "bg-transparent hover:bg-paper"
                 }`}
               >
                 <Avatar

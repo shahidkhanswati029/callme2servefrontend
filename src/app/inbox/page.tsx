@@ -60,14 +60,14 @@ function InboxInner() {
 
   return (
     <AppShell fullBleed>
-      <div className="flex h-full min-h-0 w-full flex-1 overflow-hidden bg-paper">
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden bg-paper">
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader label="Loading chats…" />
           </div>
         ) : (
           <>
-            <div className="flex h-full min-h-0 w-full min-w-0 flex-col lg:w-[320px] lg:shrink-0">
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-col lg:w-[300px] lg:max-w-[38%] lg:shrink-0">
               <InboxSidebar rows={rows} />
             </div>
             <div className="hidden h-full min-h-0 flex-1 items-center justify-center bg-[#efe8d8] p-8 text-center lg:flex">

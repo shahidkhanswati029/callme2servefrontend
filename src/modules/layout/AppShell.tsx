@@ -147,8 +147,10 @@ export function AppShell({
       className={`grid min-h-[100dvh] bg-paper lg:h-[100dvh] lg:overflow-hidden ${gridCols}`}
     >
       <aside
-        className={`hidden min-h-0 flex-col overflow-y-auto bg-[var(--sidebar)] p-5 text-paper transition-all lg:flex ${
-          sidebarOpen ? "opacity-100" : "pointer-events-none w-0 overflow-hidden p-0 opacity-0"
+        className={`hidden min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-[var(--sidebar)] text-paper transition-all lg:flex ${
+          sidebarOpen
+            ? "w-full p-5 opacity-100"
+            : "pointer-events-none w-0 overflow-hidden p-0 opacity-0"
         }`}
       >
         <div>
@@ -181,7 +183,7 @@ export function AppShell({
                   <Link
                     key={l.href}
                     href={l.href}
-                    className={`cmts-sidebar-link rounded-xl px-3 py-2.5 font-semibold transition-colors ${
+                    className={`cmts-sidebar-link truncate rounded-xl px-3 py-2.5 font-semibold transition-colors ${
                       active
                         ? "bg-[#14332b] text-paper"
                         : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
@@ -197,7 +199,7 @@ export function AppShell({
                   <Link
                     key={l.href}
                     href={l.href}
-                    className={`cmts-sidebar-link relative rounded-xl px-3 py-2.5 font-semibold transition-colors ${
+                    className={`cmts-sidebar-link relative truncate rounded-xl px-3 py-2.5 font-semibold transition-colors ${
                       active
                         ? "bg-[#14332b] text-paper"
                         : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
@@ -238,11 +240,19 @@ export function AppShell({
         className={
           fullBleed
             ? "flex h-[100dvh] min-h-0 min-w-0 flex-col overflow-hidden pb-[3.5rem] lg:h-full lg:pb-0"
-            : "mx-auto min-h-0 w-full max-w-[1100px] overflow-y-auto px-4 pb-24 pt-4 lg:px-8 lg:pb-8 lg:pt-5"
+            : "mx-auto min-h-0 min-w-0 w-full max-w-[1100px] overflow-y-auto px-4 pb-24 pt-4 lg:px-8 lg:pb-8 lg:pt-5"
         }
       >
         {fullBleed ? (
           <div className="flex shrink-0 items-center gap-2 border-b border-line bg-cream px-3 py-2 lg:px-4">
+            <button
+              type="button"
+              onClick={() => dispatch(toggleSidebar())}
+              className="hidden rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold lg:inline-flex"
+              aria-label={sidebarOpen ? t(lang, "hideMenu") : t(lang, "showMenu")}
+            >
+              {sidebarOpen ? t(lang, "hideMenu") : t(lang, "showMenu")}
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -356,7 +366,14 @@ export function AppShell({
             </div>
           </header>
         ) : null}
-        <div key={pathname} className="animate-page">
+        <div
+          key={pathname}
+          className={
+            fullBleed
+              ? "animate-page flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+              : "animate-page"
+          }
+        >
           {children}
         </div>
       </div>

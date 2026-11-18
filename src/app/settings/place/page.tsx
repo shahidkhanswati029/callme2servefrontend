@@ -14,6 +14,8 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { identityApi } from "@/modules/identity/api";
 import { sessionCookies } from "@/shared/cookies";
 import { listCountries, currencyForCountry } from "@/shared/countries";
+import { canonicalizeCity } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function PlaceSettingsPage() {
   return (
@@ -25,6 +27,7 @@ export default function PlaceSettingsPage() {
 
 function PlaceInner() {
   const account = useAppSelector((s) => s.session.account)!;
+  const language = useUiLanguage();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const toast = useToast();
@@ -60,17 +63,44 @@ function PlaceInner() {
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
+        const accuracyM = Math.round(pos.coords.accuracy || 15);
         setDraft((d) => ({
           ...d,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracyM: Math.round(pos.coords.accuracy || 15),
+          latitude,
+          longitude,
+          accuracyM,
           label:
             d.label ||
-            `Standing here · ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+            `Standing here · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
         }));
-        toast.success("GPS pin captured from where you are standing");
-        setLocating(false);
+        void locationApi
+          .detect(latitude, longitude, language)
+          .then((res) => {
+            const d = res.data;
+            const cityEn = canonicalizeCity(d.city) || d.city || "";
+            setDraft((prev) => ({
+              ...prev,
+              latitude,
+              longitude,
+              accuracyM,
+              country: d.country || prev.country,
+              city: cityEn || prev.city,
+              currency: d.currency || prev.currency,
+              label: d.placeLabel || cityEn || prev.label,
+            }));
+            if (d.country) dispatch(setCountry(d.country));
+            toast.success(
+              d.detected
+                ? `GPS · ${d.placeLabel || cityEn || d.city || ""}${d.postcode ? ` · ${d.postcode}` : ""} · ${d.country} · ${d.currency}`
+                : "GPS pin captured from where you are standing",
+            );
+          })
+          .catch(() => {
+            toast.success("GPS pin captured from where you are standing");
+          })
+          .finally(() => setLocating(false));
       },
       () => {
         toast.error("Could not read GPS. Allow location permission.");
@@ -102,17 +132,21 @@ function PlaceInner() {
           sessionCookies.saveAccessToken(refreshed.data.accessToken);
         }
       }
+      const cityCanon = canonicalizeCity(draft.city) || draft.city.trim();
       const res = await locationApi.save({
         placeLabel: draft.label.trim(),
-        city: draft.city.trim() || undefined,
+        city: cityCanon || undefined,
         country: draft.country,
         currency: draft.currency,
         latitude: draft.latitude,
         longitude: draft.longitude,
         accuracyM: draft.accuracyM,
+        // Keep the GPS-detected label/city; only fill blanks server-side.
+        autoDetect: !draft.label.trim() || !cityCanon,
+        language,
       });
       dispatch(setAccount(res.data.account));
-      dispatch(setCountry(draft.country));
+      dispatch(setCountry(res.data.account.country || draft.country));
       toast.success(res.message || "Place saved");
       router.push("/home");
     } catch (err) {

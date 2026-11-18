@@ -22,6 +22,7 @@ export type NearbyExpert = {
   topRanked?: boolean;
   distanceKm: number;
   distanceM: number;
+  distanceLabel?: string;
   latitude: number;
   longitude: number;
   package: string;
@@ -43,6 +44,8 @@ export const locationApi = {
     latitude: number;
     longitude: number;
     accuracyM?: number;
+    autoDetect?: boolean;
+    language?: string;
   }) {
     return request<{
       success: boolean;
@@ -53,13 +56,52 @@ export const locationApi = {
       body: JSON.stringify(body),
     });
   },
-  nearby(km = 5, filters?: { category?: string; q?: string }) {
-    const params = new URLSearchParams({ km: String(km) });
+  nearby(
+    km?: number,
+    filters?: {
+      category?: string;
+      q?: string;
+      latitude?: number;
+      longitude?: number;
+    },
+  ) {
+    const params = new URLSearchParams();
+    if (km != null) params.set("km", String(km));
     if (filters?.category) params.set("category", filters.category);
     if (filters?.q) params.set("q", filters.q);
+    if (filters?.latitude != null) params.set("latitude", String(filters.latitude));
+    if (filters?.longitude != null) params.set("longitude", String(filters.longitude));
+    const qs = params.toString();
     return request<{
       success: boolean;
-      data: { experts: NearbyExpert[]; km: number };
-    }>(`/api/location/nearby?${params}`);
+      data: {
+        experts: NearbyExpert[];
+        km: number;
+        radiusKm?: number;
+        package?: string;
+        inquiries?: string;
+        origin?: { latitude: number; longitude: number };
+      };
+    }>(`/api/location/nearby${qs ? `?${qs}` : ""}`);
+  },
+  detect(latitude: number, longitude: number, language?: string) {
+    return request<{
+      success: boolean;
+      data: {
+        latitude: number;
+        longitude: number;
+        country: string;
+        city: string | null;
+        placeLabel: string;
+        postcode?: string | null;
+        neighborhood?: string | null;
+        currency: string;
+        detected: boolean;
+        language?: string;
+      };
+    }>("/api/location/detect", {
+      method: "POST",
+      body: JSON.stringify({ latitude, longitude, language: language || "en" }),
+    });
   },
 };

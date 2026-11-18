@@ -14,6 +14,8 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { notificationsApi } from "@/modules/notifications/api";
 import { registerPushToken, listenForegroundPush } from "@/lib/firebase";
 import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
+import { t, tDynamic, tExpertCard } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const NearbyMap = dynamic(
   () => import("./NearbyMap").then((m) => m.NearbyMap),
@@ -21,28 +23,35 @@ const NearbyMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-[280px] items-center justify-center rounded-2xl border border-line bg-[#dfe9e2] text-sm text-muted sm:h-[340px]">
-        Loading map…
+        …
       </div>
     ),
   },
 );
 
 const CATEGORIES = [
-  "All",
-  "Surgical",
-  "Leather",
-  "Tutor",
-  "Institute",
-  "Factory",
-  "Tailor",
-  "Other",
-];
+  { id: "All", key: "catAll" },
+  { id: "Surgical", key: "catSurgical" },
+  { id: "Leather", key: "catLeather" },
+  { id: "Tutor", key: "catTutor" },
+  { id: "Institute", key: "catInstitute" },
+  { id: "Factory", key: "catFactory" },
+  { id: "Tailor", key: "catTailor" },
+  { id: "Other", key: "catOther" },
+] as const;
 
-const packageRate: Record<string, string> = {
-  FREE: "12%",
-  SILVER: "9%",
-  GOLD: "6%",
-  PLATINUM: "2%",
+const packageLabelKey: Record<string, string> = {
+  FREE: "packageFree",
+  SILVER: "packageSilver",
+  GOLD: "packageGold",
+  PLATINUM: "packagePlatinum",
+};
+
+const packageRadiusKm: Record<string, number> = {
+  FREE: 5,
+  SILVER: 12,
+  GOLD: 21,
+  PLATINUM: 33,
 };
 
 type Coordinates = { lat: number; lng: number };
@@ -61,6 +70,7 @@ function HomeInner() {
   const prefsCurrency = useAppSelector((s) => s.uiPrefs.currency);
   const displayCountry = prefsCountry || account.country;
   const displayCurrency = prefsCurrency || account.currency;
+  const lang = useUiLanguage();
   const toast = useToast();
 
   const [experts, setExperts] = useState<NearbyExpert[]>([]);
@@ -68,40 +78,49 @@ function HomeInner() {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
+  const [focusExpertId, setFocusExpertId] = useState<string | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
   const [unread, setUnread] = useState(0);
   const [jobStats, setJobStats] = useState({
     open: 0,
+    booked: 0,
     accepted: 0,
     completed: 0,
     cancelled: 0,
     earned: 0,
   });
+  const [radiusKm, setRadiusKm] = useState(packageRadiusKm[account.package] || 5);
+  const [inquiriesLabel, setInquiriesLabel] = useState("Unlimited");
 
   const loadNearby = useCallback(
-    async (searchQ?: string) => {
+    async (searchQ?: string, origin?: Coordinates | null) => {
       setLoadingNearby(true);
       try {
-        const res = await locationApi.nearby(5, {
+        const from = origin ?? currentLocation;
+        const res = await locationApi.nearby(undefined, {
           category: category === "All" ? undefined : category,
           q: (searchQ ?? query).trim() || undefined,
+          latitude: from?.lat,
+          longitude: from?.lng,
         });
         setExperts(res.data.experts || []);
+        if (res.data.radiusKm) setRadiusKm(res.data.radiusKm);
+        setInquiriesLabel(t(lang, "unlimited"));
       } catch (err) {
         setExperts([]);
-        toast.info(err instanceof Error ? err.message : "Set your place to see nearby experts");
+        toast.info(err instanceof Error ? err.message : t(lang, "setPlaceFirst"));
       } finally {
         setLoadingNearby(false);
       }
     },
-    [category, query, toast],
+    [category, query, toast, lang, currentLocation],
   );
 
-  // Category changes refetch; typing does not until Search (performance).
+  // Category / live GPS origin changes refetch; typing does not until Search.
   useEffect(() => {
     void loadNearby();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: category only
-  }, [category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: category + GPS
+  }, [category, currentLocation?.lat, currentLocation?.lng]);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,9 +129,17 @@ function HomeInner() {
       .then((res) => {
         if (cancelled) return;
         const jobs = res.data.jobs || [];
-        const next = { open: 0, accepted: 0, completed: 0, cancelled: 0, earned: 0 };
+        const next = {
+          open: 0,
+          booked: 0,
+          accepted: 0,
+          completed: 0,
+          cancelled: 0,
+          earned: 0,
+        };
         for (const j of jobs) {
           if (j.status === "OPEN") next.open += 1;
+          else if (j.status === "BOOKED") next.booked += 1;
           else if (j.status === "ACCEPTED") next.accepted += 1;
           else if (j.status === "COMPLETED") {
             next.completed += 1;
@@ -189,7 +216,6 @@ function HomeInner() {
     };
   }, [toast]);
 
-  const rate = packageRate[account.package] || "12%";
   const accountWithCoords = account as typeof account & {
     latitude?: number | null;
     longitude?: number | null;
@@ -199,49 +225,76 @@ function HomeInner() {
     <AppShell>
       <header className="mb-4">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-          {(account.city || "Sialkot").toUpperCase()} · TODAY
+          {(account.city || displayCountry || t(lang, "city")).toUpperCase()} · {t(lang, "today")}
         </p>
-        <h2 className="font-display mt-1 text-2xl font-bold">Physics, forceps, jackets</h2>
+        <h2 className="font-display mt-1 text-2xl font-bold">{account.name}</h2>
         <p className="mt-1 text-sm text-muted">
-          {account.package} · commission {rate}
-          {unread ? ` · ${unread} notifications` : ""}
+          {t(lang, packageLabelKey[account.package] || "packageFree")} · {t(lang, "radius")}{" "}
+          {radiusKm} km · {t(lang, "inquiries")} {inquiriesLabel}
+          {unread ? ` · ${unread} ${t(lang, "notifications")}` : ""}
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href="/quotations"
+            className="cmts-press rounded-xl bg-forest px-3 py-2 text-xs font-semibold text-paper"
+          >
+            {t(lang, "quotations")}
+          </Link>
+          <Link
+            href="/portfolio"
+            className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
+          >
+            {t(lang, "portfolio")}
+          </Link>
+        </div>
       </header>
 
       <ProfileCompletionBar account={account} />
 
       <section className="mb-4 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-cream p-4">
-          <h3 className="font-display text-lg font-bold">Your jobs</h3>
+          <h3 className="font-display text-lg font-bold">{t(lang, "yourJobs")}</h3>
           <div className="mt-3">
             <BarChart
               height={140}
               points={[
-                { label: "Open", value: jobStats.open },
-                { label: "Accepted", value: jobStats.accepted },
-                { label: "Done", value: jobStats.completed },
-                { label: "Cancel", value: jobStats.cancelled },
+                { label: t(lang, "statusOpen"), value: jobStats.open },
+                { label: t(lang, "statusBooked"), value: jobStats.booked },
+                { label: t(lang, "statusAccepted"), value: jobStats.accepted },
+                { label: t(lang, "statusCompleted"), value: jobStats.completed },
+                { label: t(lang, "statusCancelled"), value: jobStats.cancelled },
               ]}
             />
           </div>
         </div>
         <div className="rounded-2xl border border-line bg-cream p-4">
-          <h3 className="font-display text-lg font-bold">Activity mix</h3>
+          <h3 className="font-display text-lg font-bold">{t(lang, "activityMix")}</h3>
           <div className="mt-3">
             <DonutChart
               size={140}
               centerLabel={`${jobStats.earned || 0}`}
               slices={[
-                { label: "Open", value: jobStats.open || 0, color: "var(--brass)" },
-                { label: "Accepted", value: jobStats.accepted || 0, color: "var(--forest)" },
-                { label: "Completed", value: jobStats.completed || 0, color: "var(--success)" },
-                { label: "Cancelled", value: jobStats.cancelled || 0, color: "var(--line)" },
+                { label: t(lang, "statusOpen"), value: jobStats.open || 0, color: "var(--brass)" },
+                {
+                  label: t(lang, "statusAccepted"),
+                  value: jobStats.accepted || 0,
+                  color: "var(--forest)",
+                },
+                {
+                  label: t(lang, "statusCompleted"),
+                  value: jobStats.completed || 0,
+                  color: "var(--success)",
+                },
+                {
+                  label: t(lang, "statusCancelled"),
+                  value: jobStats.cancelled || 0,
+                  color: "var(--line)",
+                },
               ]}
             />
           </div>
           <p className="mt-2 text-xs text-muted">
-            Net earned on completed jobs as worker: {displayCurrency}{" "}
-            {jobStats.earned.toLocaleString()} · real GPS for nearby map below
+            {t(lang, "earnings")}: {displayCurrency} {jobStats.earned.toLocaleString()}
           </p>
         </div>
       </section>
@@ -249,7 +302,7 @@ function HomeInner() {
       <section className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto]">
         <input
           className="rounded-xl border border-line bg-cream px-3 py-2.5 text-sm"
-          placeholder="Search experts near me…"
+          placeholder={t(lang, "searchExperts")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -258,35 +311,39 @@ function HomeInner() {
           onClick={() => void loadNearby()}
           className="rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-paper"
         >
-          Search
+          {t(lang, "search")}
         </button>
       </section>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
           <button
-            key={c}
+            key={c.id}
             type="button"
-            onClick={() => setCategory(c)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              category === c ? "bg-forest text-paper" : "border border-line bg-cream text-ink"
+            onClick={() => setCategory(c.id)}
+            className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+              category === c.id ? "bg-forest text-paper" : "border border-line bg-cream text-ink"
             }`}
           >
-            {c}
+            {t(lang, c.key)}
           </button>
         ))}
       </div>
 
-      <section className="animate-rise mb-4">
+      <section className="animate-rise mb-4" data-nearby-map>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <h3 className="font-display text-xl font-bold">Nearby map</h3>
-          <span className="text-xs text-muted">Within 5 km · Mapbox</span>
+          <h3 className="font-display text-xl font-bold">{t(lang, "nearbyMap")}</h3>
+          <span className="text-xs text-muted">
+            {t(lang, "withinKm")} {radiusKm} km ·{" "}
+            {t(lang, packageLabelKey[account.package] || "packageFree")}
+          </span>
         </div>
         <NearbyMap
           accountLat={accountWithCoords.latitude}
           accountLng={accountWithCoords.longitude}
           currentLocation={currentLocation}
           experts={experts}
+          focusExpertId={focusExpertId}
         />
         {locationMessage ? (
           <p className="mt-2 rounded-lg bg-cream p-3 text-xs text-muted">{locationMessage}</p>
@@ -296,15 +353,15 @@ function HomeInner() {
       <section className="mb-4 grid gap-2 sm:grid-cols-3">
         <Link href="/settings/place" className="rounded-xl border border-line bg-cream p-3">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            Place
+            {t(lang, "place")}
           </p>
           <strong className="mt-1 block text-sm">
-            {account.placeLabel || account.city || "Set your pin"}
+            {account.placeLabel || account.city || t(lang, "setYourPin")}
           </strong>
         </Link>
         <div className="rounded-xl border border-line bg-cream p-3">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            Currency
+            {t(lang, "currencyLabel")}
           </p>
           <strong className="mt-1 block text-sm">
             {displayCountry} · {displayCurrency}
@@ -312,19 +369,19 @@ function HomeInner() {
         </div>
         <Link href="/shops" className="rounded-xl border border-line bg-cream p-3">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            Shop
+            {t(lang, "shop")}
           </p>
-          <strong className="mt-1 block text-sm">Open or manage shop</strong>
+          <strong className="mt-1 block text-sm">{t(lang, "openOrManageShop")}</strong>
         </Link>
       </section>
 
       <section className="grid gap-2">
-        <h3 className="font-display text-xl font-bold">Nearby experts</h3>
+        <h3 className="font-display text-xl font-bold">{t(lang, "nearbyExperts")}</h3>
         {loadingNearby ? (
-          <Loader label="Finding experts near you…" />
+          <Loader label={t(lang, "findingExperts")} />
         ) : experts.length === 0 ? (
           <p className="rounded-xl border border-line bg-cream p-4 text-sm text-muted">
-            No experts match this search inside 5 km. Save your place pin first.
+            {t(lang, "noExpertsInRadius")}
           </p>
         ) : (
           experts.map((n) => {
@@ -333,7 +390,7 @@ function HomeInner() {
             return (
             <div
               key={n.id}
-              className={`flex items-center justify-between gap-3 rounded-xl border bg-cream px-4 py-3 ${
+              className={`cmts-card flex items-center justify-between gap-3 rounded-xl border bg-cream px-4 py-3 ${
                 top ? "border-brass shadow-[0_6px_18px_rgba(224,154,43,0.18)]" : "border-line"
               }`}
             >
@@ -342,34 +399,50 @@ function HomeInner() {
                   <strong>{n.name}</strong>
                   {top ? (
                     <span className="rounded-md bg-brass px-1.5 py-0.5 text-[0.6rem] font-bold uppercase text-forest">
-                      Top
+                      {t(lang, "topRanked")}
                     </span>
                   ) : null}
                   <span
-                    className={`h-2 w-2 rounded-full ${n.isOnline ? "bg-success" : "bg-line"}`}
-                    title={n.isOnline ? "Online" : "Offline"}
+                    className={`h-2 w-2 rounded-full ${n.isOnline ? "animate-pulse-dot bg-success" : "bg-line"}`}
+                    title={n.isOnline ? t(lang, "online") : t(lang, "offline")}
                   />
                 </div>
                 <span className="text-sm text-muted">
-                  {n.placeLabel || n.city || "—"} · {n.work || "Expert"} · {n.distanceKm} km
+                  {tExpertCard(lang, n)} · {n.distanceKm} km
                 </span>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <em className="not-italic font-bold text-brass-deep">
                   ★ {Number(n.rating || 0).toFixed(1)}
                 </em>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap justify-end gap-1">
+                  <button
+                    type="button"
+                    className="cmts-press rounded-lg border border-line bg-paper px-3 py-1 text-xs font-semibold text-forest"
+                    onClick={() => {
+                      setFocusExpertId(n.id);
+                      try {
+                        document
+                          .querySelector("[data-nearby-map]")
+                          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                  >
+                    Directions
+                  </button>
                   <Link
                     href={`/inbox/${n.id}`}
-                    className="rounded-lg bg-forest px-3 py-1 text-xs font-semibold text-paper"
+                    className="cmts-press rounded-lg bg-forest px-3 py-1 text-xs font-semibold text-paper"
                   >
-                    Message
+                    {t(lang, "message")}
                   </Link>
                   <Link
                     href={`/jobs?worker=${n.id}`}
                     className="rounded-lg border border-line bg-cream px-3 py-1 text-xs font-semibold text-forest"
                   >
-                    Ask job
+                    {t(lang, "askJob")}
                   </Link>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { setAccount } from "@/store/slices/sessionSlice";
 import { locationApi } from "@/modules/location/api";
 import { currencyForCountry } from "@/shared/countries";
 import { getAccessToken } from "@/lib/token";
+import { canonicalizeCity, isUiLanguage } from "@/shared/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -13,6 +14,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export function AutoPlaceOnLogin() {
   const account = useAppSelector((s) => s.session.account);
   const hydrated = useAppSelector((s) => s.session.hydrated);
+  const uiLang = useAppSelector((s) => s.uiPrefs.language);
+  const language = isUiLanguage(uiLang) ? uiLang : "en";
   const dispatch = useAppDispatch();
   const placeRan = useRef(false);
   const refRan = useRef(false);
@@ -57,17 +60,29 @@ export function AutoPlaceOnLogin() {
       async (pos) => {
         try {
           const country = account.country || "PK";
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          let city = canonicalizeCity(account.city) || account.city || undefined;
+          let placeLabel =
+            account.placeLabel ||
+            city ||
+            `Standing here · ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          try {
+            const detected = await locationApi.detect(lat, lng, language);
+            city = canonicalizeCity(detected.data.city) || detected.data.city || city;
+            placeLabel = detected.data.placeLabel || placeLabel;
+          } catch {
+            // keep fallback label
+          }
           const res = await locationApi.save({
-            placeLabel:
-              account.placeLabel ||
-              account.city ||
-              `Standing here · ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`,
-            city: account.city || undefined,
-            country,
+            placeLabel,
+            city,
+            country: country,
             currency: account.currency || currencyForCountry(country),
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            latitude: lat,
+            longitude: lng,
             accuracyM: Math.round(pos.coords.accuracy || 25),
+            language,
           });
           dispatch(setAccount(res.data.account));
         } catch {
@@ -79,7 +94,7 @@ export function AutoPlaceOnLogin() {
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
-  }, [hydrated, account, dispatch]);
+  }, [hydrated, account, dispatch, language]);
 
   return null;
 }

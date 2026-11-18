@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -8,9 +8,10 @@ import { setAccount } from "@/store/slices/sessionSlice";
 import { ButtonLoader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useConfirm } from "@/shared/confirm/ConfirmProvider";
-import { UI_LANGUAGE_OPTIONS, type UiLanguage } from "@/shared/i18n";
+import { getUiLanguageOptions, t, type UiLanguage } from "@/shared/i18n";
 import { setUiLanguage as setUiLanguagePref } from "@/store/slices/uiPrefsSlice";
 import { getAccessToken } from "@/lib/token";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -27,22 +28,31 @@ function Inner() {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const { confirm } = useConfirm();
-  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(
-    (account.uiLanguage as UiLanguage) || "en",
-  );
+  const lang = useUiLanguage();
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(lang);
   const [manual, setManual] = useState(account.languages.join(", "));
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setUiLanguage(lang);
+  }, [lang]);
   const presets = useMemo(
     () => ["Urdu", "English", "Punjabi", "Arabic", "Persian", "Japanese", "Sindhi", "Pashto"],
     [],
   );
 
+  function pickLanguage(code: UiLanguage) {
+    setUiLanguage(code);
+    // Apply instantly across the whole app.
+    dispatch(setUiLanguagePref(code));
+  }
+
   async function save() {
     const ok = await confirm({
-      title: "Update language",
-      message: "Save your app language and spoken languages?",
-      confirmLabel: "Save",
-      cancelLabel: "Cancel",
+      title: t(lang, "language"),
+      message: t(lang, "saveLanguageConfirm"),
+      confirmLabel: t(lang, "save"),
+      cancelLabel: t(lang, "cancel"),
     });
     if (!ok) return;
     setBusy(true);
@@ -63,33 +73,30 @@ function Inner() {
       });
       const json = await res.json();
       if (!res.ok || json.success === false) {
-        throw new Error(json.error?.message || json.message || "Save failed");
+        throw new Error(json.error?.message || json.message || t(lang, "saveFailed"));
       }
       dispatch(setAccount(json.data.account));
       dispatch(setUiLanguagePref(uiLanguage));
-      toast.success("Language saved");
+      toast.success(t(lang, "languageSaved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
+      toast.error(err instanceof Error ? err.message : t(lang, "saveFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AppShell title="Language">
-      <p className="mb-4 text-sm text-muted">
-        Interface language is separate from currency. English, Urdu, Punjabi, Arabic, Persian,
-        and Japanese are available — also type the languages you speak.
-      </p>
+    <AppShell title={t(lang, "language")}>
+      <p className="mb-4 text-sm text-muted">{t(lang, "languagePageLede")}</p>
 
       <div className="grid gap-3">
-        <p className="text-sm font-semibold">App language</p>
+        <p className="text-sm font-semibold">{t(lang, "appLanguage")}</p>
         <div className="flex flex-wrap gap-2">
-          {UI_LANGUAGE_OPTIONS.map((o) => (
+          {getUiLanguageOptions(lang).map((o) => (
             <button
               key={o.code}
               type="button"
-              onClick={() => setUiLanguage(o.code)}
+              onClick={() => pickLanguage(o.code)}
               className={`rounded-xl px-4 py-2 text-sm font-semibold ${
                 uiLanguage === o.code
                   ? "bg-forest text-paper"
@@ -101,7 +108,7 @@ function Inner() {
           ))}
         </div>
 
-        <p className="mt-4 text-sm font-semibold">Languages you speak</p>
+        <p className="mt-4 text-sm font-semibold">{t(lang, "languagesYouSpeak")}</p>
         <div className="flex flex-wrap gap-2">
           {presets.map((p) => {
             const on = manual
@@ -130,7 +137,7 @@ function Inner() {
           })}
         </div>
         <label className="grid gap-1 text-sm font-semibold">
-          Or write manually
+          {t(lang, "orWriteManually")}
           <input
             className="rounded-xl border border-line bg-cream px-3 py-3 font-normal"
             value={manual}
@@ -145,7 +152,7 @@ function Inner() {
           onClick={() => void save()}
           className="mt-2 rounded-xl bg-forest px-4 py-3 font-semibold text-paper disabled:opacity-50"
         >
-          {busy ? <ButtonLoader /> : "Save language"}
+          {busy ? <ButtonLoader /> : t(lang, "saveLanguage")}
         </button>
       </div>
     </AppShell>

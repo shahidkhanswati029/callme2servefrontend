@@ -1,468 +1,240 @@
+/**
+ * Free open-source style i18n (no paid service).
+ *
+ * UI copy  → src/shared/locales/{lang}.json
+ * DB labels → canonical English in DB + db-aliases.json → locale keys
+ *
+ * Public API: t, tDynamic, tExpertCard, canonicalizeCity, …
+ */
+import enJson from "./locales/en.json";
+import urJson from "./locales/ur.json";
+import paJson from "./locales/pa.json";
+import arJson from "./locales/ar.json";
+import faJson from "./locales/fa.json";
+import jaJson from "./locales/ja.json";
+import aliasesJson from "./locales/db-aliases.json";
+
 export type UiLanguage = "en" | "ur" | "pa" | "ar" | "fa" | "ja";
 
-const en: Record<string, string> = {
-  home: "Home",
-  message: "Message",
-  shops: "Shops",
-  place: "Place",
-  alarms: "Alarms",
-  me: "Me",
-  earnings: "Earnings",
-  refer: "Refer",
-  language: "Language",
-  notifications: "Notifications",
-  jobs: "Jobs",
-  signOut: "Sign out",
-  searchExperts: "Search experts near me…",
-  nearbyExperts: "Nearby experts",
-  inbox: "Inbox",
-  online: "Online",
-  offline: "Offline",
-  typeMessage: "Type a message…",
-  send: "Send",
-  recordVoice: "Record voice",
-  stopRecording: "Stop & send",
-  login: "Login",
-  getStarted: "Get started",
-  landingEyebrow: "Global experts · live place",
-  landingTag: "Everyone is an expert.",
-  landingLede:
-    "Ask another expert for work, or open a shop. Google or Facebook opens the account. Fingerprint and face come next. Live place from your real GPS pin.",
-  promise1: "One expert account. Ask for work, or open a shop.",
-  promise2: "Settings move your real pin. Currency follows the country.",
-  promise3: "Free 12%, Silver 9%, Gold 6%, Platinum 2%.",
-  signIn: "Sign in",
-  landingCardTitle: "Open your door",
-  landingCardLede: "No password. Google, Facebook, then fingerprint or face.",
-  continueGoogle: "Continue with Google",
-  continueFacebook: "Continue with Facebook",
-  returning: "Returning?",
-  sensorLogin: "Fingerprint / face",
-  desk: "Desk",
-  account: "Account",
-  categories: "Categories",
-  findExperts: "Find experts",
-  cities: "Cities",
-  howItWorks: "How it works",
-  faq: "FAQ",
-  about: "About",
-  contact: "Contact",
-  dark: "Dark",
-  light: "Light",
-  back: "Back",
-  hideMenu: "Hide menu",
-  showMenu: "Show menu",
-  searchExpertsCta: "Search experts",
-  whatService: "What service do you need?",
-  service: "Service",
-  city: "City",
-  searchCity: "Search city…",
-  expertCta: "Are you an expert? Get customers daily",
-  popularCategories: "Popular service categories",
-  exploreAll: "Explore all",
-  testimonials: "Testimonials",
-  whatCustomersSay: "What our customers say",
-  citiesWeServe: "Cities we serve",
-  explore: "Explore",
-  requestCity: "Don't see your city? Request your city",
-  liveDirectory: "Live directory",
-  noExpertsMatch: "No experts match. Try another city or category.",
-  loading: "Loading…",
-  board: "Board",
-  live: "Live",
-  money: "Money",
-  experts: "Experts",
-  income: "Income",
-  supportBanner: "Place questions? Contact our support team",
-  findTrusted: "Find trusted experts near you.",
-  heroLede:
-    "Real experts with live GPS pins. Ask for work, open a shop, pay with JazzCash, Easypaisa, Google Pay, PayPal, or debit — cash is out.",
-  instantAsk: "Instant ask",
-  verifiedPlace: "Verified place",
-  realReceipts: "Real receipts",
-  topRanked: "Top ranked",
-  cookieTitle: "Cookies for a smoother CallMe2Serve",
-  cookieBody:
-    "We use essential cookies to keep you signed in (httpOnly session). Analytics stay off until you allow.",
-  cookieAllow: "Allow",
-  cookieDeny: "Cancel",
-  brandName: "CallMe2Serve",
+/** Webpack / Node JSON interop — sometimes the payload is under `.default`. */
+function unwrapJson<T extends object>(mod: T | { default: T }): T {
+  if (
+    mod &&
+    typeof mod === "object" &&
+    "default" in mod &&
+    (mod as { default: unknown }).default &&
+    typeof (mod as { default: unknown }).default === "object"
+  ) {
+    return (mod as { default: T }).default;
+  }
+  return mod as T;
+}
+
+type AliasFile = {
+  cities: Record<string, string>;
+  canonicalCities: Record<string, string>;
+  labels: Record<string, string>;
 };
 
-const ur: Record<string, string> = {
-  ...en,
-  home: "ہوم",
-  message: "پیغام",
-  shops: "دکانیں",
-  place: "مقام",
-  alarms: "الارم",
-  me: "میں",
-  earnings: "کمائی",
-  refer: "حوالہ",
-  language: "زبان",
-  notifications: "اطلاعات",
-  jobs: "کام",
-  signOut: "خارج ہوں",
-  searchExperts: "قریبی ماہر تلاش کریں…",
-  nearbyExperts: "قریبی ماہرین",
-  inbox: "ان باکس",
-  online: "آن لائن",
-  offline: "آف لائن",
-  typeMessage: "پیغام لکھیں…",
-  send: "بھیجیں",
-  recordVoice: "آواز ریکارڈ کریں",
-  stopRecording: "روکیں اور بھیجیں",
-  login: "لاگ ان",
-  getStarted: "شروع کریں",
-  landingEyebrow: "عالمی ماہرین · براہ راست مقام",
-  landingTag: "ہر کوئی ماہر ہے۔",
-  landingLede:
-    "کام کے لیے ماہر سے پوچھیں، یا دکان کھولیں۔ گوگل یا فیس بک اکاؤنٹ کھولتا ہے۔ اس کے بعد فنگر پرنٹ اور چہرہ۔",
-  promise1: "ایک ماہر اکاؤنٹ۔ کام مانگیں یا دکان کھولیں۔",
-  promise2: "ترتیبات سے حقیقی مقام۔ کرنسی ملک کے مطابق۔",
-  promise3: "مفت ۱۲٪ · سلور ۹٪ · گولڈ ۶٪ · پلاٹینم ۲٪۔",
-  signIn: "سائن ان",
-  landingCardTitle: "اپنا دروازہ کھولیں",
-  landingCardLede: "پاس ورڈ نہیں۔ گوگل، فیس بک، پھر فنگر پرنٹ یا چہرہ۔",
-  continueGoogle: "گوگل سے جاری رکھیں",
-  continueFacebook: "فیس بک سے جاری رکھیں",
-  returning: "واپس آئے ہیں؟",
-  sensorLogin: "فنگر پرنٹ / چہرہ",
-  desk: "ڈیسک",
-  account: "اکاؤنٹ",
-  categories: "زمرے",
-  findExperts: "ماہر تلاش کریں",
-  cities: "شہر",
-  howItWorks: "کیسے کام کرتا ہے",
-  faq: "عمومی سوالات",
-  about: "ہمارے بارے میں",
-  contact: "رابطہ",
-  dark: "ڈارک",
-  light: "لائٹ",
-  back: "واپس",
-  hideMenu: "مینو چھپائیں",
-  showMenu: "مینو دکھائیں",
-  searchExpertsCta: "ماہرین تلاش کریں",
-  whatService: "آپ کو کون سی سروس چاہیے؟",
-  service: "سروس",
-  city: "شہر",
-  searchCity: "شہر تلاش کریں…",
-  expertCta: "کیا آپ ماہر ہیں؟ روزانہ گاہک حاصل کریں",
-  popularCategories: "مقبول زمرے",
-  exploreAll: "سب دیکھیں",
-  testimonials: "تاثرات",
-  whatCustomersSay: "گاہک کیا کہتے ہیں",
-  citiesWeServe: "شہر جہاں ہم کام کرتے ہیں",
-  explore: "دریافت کریں",
-  requestCity: "آپ کا شہر نہیں؟ درخواست بھیجیں",
-  liveDirectory: "لائیو ڈائریکٹری",
-  findTrusted: "قریبی قابلِ اعتماد ماہر تلاش کریں۔",
-  heroLede:
-    "حقیقی ماہرین، لائیو جی پی ایس۔ کام مانگیں، دکان کھولیں، جیز کیش، ایزی پیسہ، گوگل پے، پے پال یا ڈیبٹ سے ادائیگی کریں۔",
-  instantAsk: "فوری پوچھیں",
-  verifiedPlace: "تصدیق شدہ مقام",
-  realReceipts: "اصل رسیدیں",
-  supportBanner: "سوالات؟ ہماری سپورٹ سے رابطہ کریں",
-};
-
-const pa: Record<string, string> = {
-  ...en,
-  home: "ہوم",
-  message: "سنیہا",
-  shops: "دکاناں",
-  place: "جگہ",
-  alarms: "الارم",
-  me: "میں",
-  earnings: "کمائی",
-  refer: "حوالہ",
-  language: "بولی",
-  notifications: "نوٹیفیکیشن",
-  jobs: "کم",
-  signOut: "باہر نکلو",
-  searchExperts: "نیڑے دے ماہر لبو…",
-  nearbyExperts: "نیڑے دے ماہر",
-  inbox: "ان باکس",
-  online: "آن لائن",
-  offline: "آف لائن",
-  typeMessage: "سنیہا لکھو…",
-  send: "بھیجو",
-  recordVoice: "آواز ریکارڈ کرو",
-  stopRecording: "روکو تے بھیجو",
-  login: "لاگ ان",
-  getStarted: "شروع کرو",
-  landingEyebrow: "عالمی ماہر · لائیو جگہ",
-  landingTag: "ہر کوئی ماہر اے۔",
-  landingLede:
-    "کم لئی ماہر نال گل کرو، یا دکان کھولو۔ گوگل یا فیس بک اکاؤنٹ کھولدا اے۔ فیر فنگر پرنٹ تے چہرہ۔",
-  account: "اکاؤنٹ",
-  categories: "قسماں",
-  findExperts: "ماہر لبو",
-  cities: "شہر",
-  howItWorks: "کیویں کم کردا اے",
-  faq: "سوالات",
-  about: "ساڈے بارے",
-  contact: "رابطہ",
-  dark: "ڈارک",
-  light: "لائٹ",
-  back: "واپس",
-  hideMenu: "مینو لکاؤ",
-  showMenu: "مینو وکھاو",
-  searchExpertsCta: "ماہر لبو",
-  whatService: "تہاڈے لئی کیہڑی سروس؟",
-  service: "سروس",
-  city: "شہر",
-  searchCity: "شہر لبو…",
-  expertCta: "کی تسیں ماہر او؟ روز گاہک لوو",
-  popularCategories: "مقبول قسماں",
-  exploreAll: "سب ویکھو",
-  testimonials: "تاثرات",
-  whatCustomersSay: "گاہک کی کہندے نے",
-  citiesWeServe: "شہر جتھے اسیں کم کردے آں",
-  explore: "ویکھو",
-  requestCity: "تہاڈا شہر نہیں؟ درخواست بھیجو",
-  findTrusted: "بھروسے لائق ماہر لبو۔",
-  heroLede:
-    "اصل ماہر، لائیو جی پی ایس۔ کم منگو، دکان کھولو، ڈیجیٹل ادائیگی کرو — کیش نہیں۔",
-  instantAsk: "فوری پوچھو",
-  verifiedPlace: "تصدیق شدہ جگہ",
-  realReceipts: "اصل رسیداں",
-  supportBanner: "سوال؟ سپورٹ نال رابطہ کرو",
-  board: "بورڈ",
-  live: "لائیو",
-  money: "پیسے",
-  experts: "ماہر",
-  income: "آمدن",
-};
-
-const ar: Record<string, string> = {
-  ...en,
-  home: "الرئيسية",
-  message: "الرسائل",
-  shops: "المتاجر",
-  place: "الموقع",
-  alarms: "التنبيهات",
-  me: "حسابي",
-  earnings: "الأرباح",
-  refer: "الإحالة",
-  language: "اللغة",
-  notifications: "الإشعارات",
-  jobs: "الوظائف",
-  signOut: "تسجيل الخروج",
-  searchExperts: "ابحث عن خبراء بالقرب منك…",
-  nearbyExperts: "خبراء قريبون",
-  inbox: "الوارد",
-  online: "متصل",
-  offline: "غير متصل",
-  typeMessage: "اكتب رسالة…",
-  send: "إرسال",
-  recordVoice: "تسجيل صوت",
-  stopRecording: "إيقاف وإرسال",
-  login: "تسجيل الدخول",
-  getStarted: "ابدأ",
-  landingEyebrow: "خبراء عالميون · موقع مباشر",
-  landingTag: "الجميع خبير.",
-  landingLede:
-    "اطلب عملاً من خبير أو افتح متجرك. جوجل أو فيسبوك يفتح الحساب ثم بصمة الوجه أو الإصبع.",
-  signIn: "تسجيل الدخول",
-  account: "الحساب",
-  categories: "الفئات",
-  findExperts: "ابحث عن خبراء",
-  cities: "المدن",
-  howItWorks: "كيف يعمل",
-  faq: "الأسئلة",
-  about: "من نحن",
-  contact: "اتصل بنا",
-  dark: "داكن",
-  light: "فاتح",
-  back: "رجوع",
-  hideMenu: "إخفاء القائمة",
-  showMenu: "إظهار القائمة",
-  searchExpertsCta: "ابحث عن خبراء",
-  whatService: "ما الخدمة التي تحتاجها؟",
-  service: "الخدمة",
-  city: "المدينة",
-  searchCity: "ابحث عن مدينة…",
-  expertCta: "هل أنت خبير؟ احصل على عملاء يومياً",
-  popularCategories: "الفئات الشائعة",
-  exploreAll: "استكشف الكل",
-  testimonials: "آراء العملاء",
-  whatCustomersSay: "ماذا يقول عملاؤنا",
-  citiesWeServe: "المدن التي نخدمها",
-  explore: "استكشف",
-  requestCity: "مدينتك غير موجودة؟ اطلب إضافتها",
-  liveDirectory: "دليل مباشر",
-  findTrusted: "اعثر على خبراء موثوقين بالقرب منك.",
-  heroLede:
-    "خبراء حقيقيون مع موقع GPS مباشر. اطلب عملاً أو افتح متجراً وادفع إلكترونياً — بدون نقد.",
-  instantAsk: "طلب فوري",
-  verifiedPlace: "موقع موثق",
-  realReceipts: "إيصالات حقيقية",
-  supportBanner: "أسئلة؟ تواصل مع فريق الدعم",
-  board: "لوحة",
-  live: "مباشر",
-  money: "المال",
-  experts: "الخبراء",
-  income: "الدخل",
-};
-
-const fa: Record<string, string> = {
-  ...en,
-  home: "خانه",
-  message: "پیام",
-  shops: "فروشگاه‌ها",
-  place: "مکان",
-  alarms: "هشدارها",
-  me: "من",
-  earnings: "درآمد",
-  refer: "معرفی",
-  language: "زبان",
-  notifications: "اعلان‌ها",
-  jobs: "کارها",
-  signOut: "خروج",
-  searchExperts: "جستجوی متخصص نزدیک…",
-  nearbyExperts: "متخصصان نزدیک",
-  inbox: "صندوق ورودی",
-  online: "آنلاین",
-  offline: "آفلاین",
-  typeMessage: "پیام بنویسید…",
-  send: "ارسال",
-  recordVoice: "ضبط صدا",
-  stopRecording: "توقف و ارسال",
-  login: "ورود",
-  getStarted: "شروع کنید",
-  landingEyebrow: "متخصصان جهانی · مکان زنده",
-  landingTag: "همه متخصص هستند.",
-  landingLede:
-    "از متخصص کار بخواهید یا فروشگاه باز کنید. گوگل یا فیسبوک حساب می‌سازد، سپس اثر انگشت یا چهره.",
-  account: "حساب",
-  categories: "دسته‌ها",
-  findExperts: "جستجوی متخصص",
-  cities: "شهرها",
-  howItWorks: "نحوه کار",
-  faq: "سوالات",
-  about: "درباره ما",
-  contact: "تماس",
-  dark: "تیره",
-  light: "روشن",
-  back: "بازگشت",
-  hideMenu: "پنهان کردن منو",
-  showMenu: "نمایش منو",
-  searchExpertsCta: "جستجوی متخصصان",
-  whatService: "به چه خدمتی نیاز دارید؟",
-  service: "خدمت",
-  city: "شهر",
-  searchCity: "جستجوی شهر…",
-  expertCta: "متخصص هستید؟ هر روز مشتری بگیرید",
-  popularCategories: "دسته‌های محبوب",
-  exploreAll: "همه را ببینید",
-  testimonials: "نظرات",
-  whatCustomersSay: "مشتریان چه می‌گویند",
-  citiesWeServe: "شهرهایی که پوشش می‌دهیم",
-  explore: "کاوش",
-  requestCity: "شهرتان نیست؟ درخواست دهید",
-  findTrusted: "متخصصان قابل اعتماد نزدیک خود را پیدا کنید.",
-  heroLede:
-    "متخصصان واقعی با موقعیت GPS زنده. کار بخواهید، فروشگاه باز کنید و دیجیتال پرداخت کنید — بدون پول نقد.",
-  instantAsk: "درخواست فوری",
-  verifiedPlace: "مکان تأییدشده",
-  realReceipts: "رسیدهای واقعی",
-  supportBanner: "سؤال دارید؟ با پشتیبانی تماس بگیرید",
-  board: "داشبورد",
-  live: "زنده",
-  money: "پول",
-  experts: "متخصصان",
-  income: "درآمد",
-};
-
-const ja: Record<string, string> = {
-  ...en,
-  home: "ホーム",
-  message: "メッセージ",
-  shops: "ショップ",
-  place: "場所",
-  alarms: "アラーム",
-  me: "マイページ",
-  earnings: "収益",
-  refer: "紹介",
-  language: "言語",
-  notifications: "通知",
-  jobs: "仕事",
-  signOut: "ログアウト",
-  searchExperts: "近くの専門家を検索…",
-  nearbyExperts: "近くの専門家",
-  inbox: "受信箱",
-  online: "オンライン",
-  offline: "オフライン",
-  typeMessage: "メッセージを入力…",
-  send: "送信",
-  recordVoice: "音声録音",
-  stopRecording: "停止して送信",
-  login: "ログイン",
-  getStarted: "はじめる",
-  landingEyebrow: "グローバル専門家 · ライブ位置",
-  landingTag: "誰もが専門家です。",
-  landingLede:
-    "専門家に仕事を頼むか、ショップを開きます。Google / Facebookで開始し、指紋または顔認証へ。",
-  account: "アカウント",
-  categories: "カテゴリ",
-  findExperts: "専門家を探す",
-  cities: "都市",
-  howItWorks: "使い方",
-  faq: "FAQ",
-  about: "概要",
-  contact: "お問い合わせ",
-  dark: "ダーク",
-  light: "ライト",
-  back: "戻る",
-  hideMenu: "メニューを隠す",
-  showMenu: "メニューを表示",
-  searchExpertsCta: "専門家を検索",
-  whatService: "どのサービスが必要ですか？",
-  service: "サービス",
-  city: "都市",
-  searchCity: "都市を検索…",
-  expertCta: "専門家ですか？毎日顧客を獲得",
-  popularCategories: "人気カテゴリ",
-  exploreAll: "すべて見る",
-  testimonials: "お客様の声",
-  whatCustomersSay: "お客様の声",
-  citiesWeServe: "対応都市",
-  explore: "見る",
-  requestCity: "都市がありませんか？リクエスト",
-  liveDirectory: "ライブディレクトリ",
-  findTrusted: "近くの信頼できる専門家を見つけよう。",
-  heroLede:
-    "リアルなGPS位置の専門家。仕事依頼・ショップ開設・電子決済（現金なし）。",
-  instantAsk: "即リクエスト",
-  verifiedPlace: "確認済み位置",
-  realReceipts: "本物の領収書",
-  supportBanner: "ご質問はサポートへ",
-  board: "ボード",
-  live: "ライブ",
-  money: "マネー",
-  experts: "専門家",
-  income: "収入",
-};
+const en = unwrapJson(enJson) as Record<string, string>;
+const ur = unwrapJson(urJson) as Record<string, string>;
+const pa = unwrapJson(paJson) as Record<string, string>;
+const ar = unwrapJson(arJson) as Record<string, string>;
+const fa = unwrapJson(faJson) as Record<string, string>;
+const ja = unwrapJson(jaJson) as Record<string, string>;
+const aliases = unwrapJson(aliasesJson) as AliasFile;
 
 const dict: Record<UiLanguage, Record<string, string>> = { en, ur, pa, ar, fa, ja };
 
-export function t(lang: UiLanguage, key: string): string {
+const CITY_ALIASES: Record<string, string> = aliases?.cities || {};
+const CANONICAL_CITY: Record<string, string> = aliases?.canonicalCities || {};
+const DYNAMIC_MAP: Record<string, string> = aliases?.labels || {};
+
+const CITY_ALIAS_TO_LABEL: Record<string, string> = {};
+for (const [alias, localeKey] of Object.entries(CITY_ALIASES)) {
+  if (/^[\x00-\x7F]+$/.test(alias)) {
+    CITY_ALIAS_TO_LABEL[alias.toLowerCase()] = localeKey;
+  }
+}
+
+const WORD_MAP: Record<string, string> = {
+  ...DYNAMIC_MAP,
+  ...CITY_ALIAS_TO_LABEL,
+};
+
+const PHRASE_MAP: Array<{ match: RegExp; key: string }> = [
+  { match: /surgical\s+instrument/, key: "workSurgicalMaker" },
+  { match: /leather\s+jackets?/, key: "workLeatherJackets" },
+  { match: /^leather$/, key: "workLeather" },
+];
+
+function normKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function tImpl(lang: UiLanguage, key: string): string {
+  if (lang === "en") return dict.en[key] || key;
   return dict[lang]?.[key] || dict.en[key] || key;
 }
 
-export function isRtl(lang: UiLanguage): boolean {
+function canonicalizeCityImpl(raw: string | null | undefined): string {
+  if (!raw?.trim()) return "";
+  const trimmed = raw.trim();
+  const folded = trimmed.toLowerCase().replace(/\s+/g, " ");
+  if (CANONICAL_CITY[folded]) return CANONICAL_CITY[folded];
+  const localeKey = CITY_ALIASES[trimmed] || CITY_ALIASES[folded];
+  if (localeKey) {
+    for (const [canonKey, enName] of Object.entries(CANONICAL_CITY)) {
+      if (CITY_ALIASES[canonKey] === localeKey) return enName;
+    }
+  }
+  if (/^[\x00-\x7F]+$/.test(trimmed)) {
+    return trimmed
+      .split(/\s+/)
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w))
+      .join(" ");
+  }
+  return trimmed;
+}
+
+function mergeCitiesByCanonicalImpl<
+  T extends { city: string; experts: number; shops: number },
+>(rows: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const row of rows) {
+    const city = canonicalizeCityImpl(row.city) || row.city;
+    const key = city.toLowerCase();
+    const prev = map.get(key);
+    if (prev) {
+      map.set(key, {
+        ...prev,
+        city,
+        experts: prev.experts + row.experts,
+        shops: Math.max(prev.shops, row.shops),
+      });
+    } else {
+      map.set(key, { ...row, city });
+    }
+  }
+  return [...map.values()].sort((a, b) => b.experts - a.experts || a.city.localeCompare(b.city));
+}
+
+function tDynamicImpl(lang: UiLanguage, value: string | null | undefined): string {
+  if (value == null || value === "") return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/\s[-–—]\s/.test(raw)) {
+    return raw
+      .split(/\s[-–—]\s/)
+      .map((part) => tDynamicImpl(lang, part.trim()))
+      .join(" · ");
+  }
+  if (raw.includes(",") && raw.length > 3) {
+    const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      return parts.map((p) => tDynamicImpl(lang, p)).join(", ");
+    }
+  }
+  const countryKey = `country${raw.toUpperCase()}`;
+  if (dict.en[countryKey]) return tImpl(lang, countryKey);
+
+  const n = normKey(raw);
+  const cityLocale =
+    CITY_ALIASES[raw] || CITY_ALIASES[n] || CITY_ALIASES[n.replace(/\s+/g, "")];
+  if (cityLocale) return tImpl(lang, cityLocale);
+
+  if (DYNAMIC_MAP[n]) return tImpl(lang, DYNAMIC_MAP[n]);
+  const compact = n.replace(/\s+/g, "");
+  if (DYNAMIC_MAP[compact]) return tImpl(lang, DYNAMIC_MAP[compact]);
+  for (const p of PHRASE_MAP) {
+    if (p.match.test(n)) return tImpl(lang, p.key);
+  }
+  const words = n.split(" ");
+  let hit = 0;
+  const out = words.map((w) => {
+    const cityW = CITY_ALIASES[w];
+    const k = cityW || WORD_MAP[w];
+    if (k) {
+      hit += 1;
+      return tImpl(lang, k);
+    }
+    return w;
+  });
+  if (hit > 0) return out.join(" ");
+  if (lang === "en") {
+    const canon = canonicalizeCityImpl(raw);
+    if (canon && canon !== raw && /^[\x00-\x7F]+$/.test(canon)) return canon;
+  }
+  return raw;
+}
+
+function tExpertCardImpl(
+  lang: UiLanguage,
+  expert: {
+    work?: string | null;
+    city?: string | null;
+    placeLabel?: string | null;
+    package?: string | null;
+  },
+): string {
+  if (expert.work?.trim()) {
+    return [tDynamicImpl(lang, expert.work), tDynamicImpl(lang, expert.city)]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (expert.placeLabel?.trim()) {
+    return tDynamicImpl(lang, expert.placeLabel);
+  }
+  return [tImpl(lang, "experts"), tDynamicImpl(lang, expert.city)].filter(Boolean).join(" · ");
+}
+
+function isRtlImpl(lang: UiLanguage): boolean {
   return lang === "ur" || lang === "pa" || lang === "ar" || lang === "fa";
 }
 
-export function isUiLanguage(v: string): v is UiLanguage {
+function isUiLanguageImpl(v: string): v is UiLanguage {
   return v === "en" || v === "ur" || v === "pa" || v === "ar" || v === "fa" || v === "ja";
 }
 
-export const UI_LANGUAGE_OPTIONS: Array<{ code: UiLanguage; label: string }> = [
-  { code: "en", label: "English" },
-  { code: "ur", label: "اردو · Urdu" },
-  { code: "pa", label: "پنجابی · Punjabi" },
-  { code: "ar", label: "العربية · Arabic" },
-  { code: "fa", label: "فارسی · Persian" },
-  { code: "ja", label: "日本語 · Japanese" },
-];
+const LANG_LABELS_EN: Record<UiLanguage, string> = {
+  en: "English",
+  ur: "Urdu",
+  pa: "Punjabi",
+  ar: "Arabic",
+  fa: "Persian",
+  ja: "Japanese",
+};
+
+const LANG_LABELS_NATIVE: Record<UiLanguage, string> = {
+  en: "English",
+  ur: "اردو",
+  pa: "پنجابی",
+  ar: "العربية",
+  fa: "فارسی",
+  ja: "日本語",
+};
+
+function getUiLanguageOptionsImpl(
+  currentLang: UiLanguage = "en",
+): Array<{ code: UiLanguage; label: string }> {
+  const labels = currentLang === "en" ? LANG_LABELS_EN : LANG_LABELS_NATIVE;
+  return (Object.keys(LANG_LABELS_EN) as UiLanguage[]).map((code) => ({
+    code,
+    label: labels[code],
+  }));
+}
+
+/** Stable named exports — const bindings avoid intermittent Webpack “is not a function”. */
+export const t = tImpl;
+export const tDynamic = tDynamicImpl;
+export const tExpertCard = tExpertCardImpl;
+export const canonicalizeCity = canonicalizeCityImpl;
+export const mergeCitiesByCanonical = mergeCitiesByCanonicalImpl;
+export const isRtl = isRtlImpl;
+export const isUiLanguage = isUiLanguageImpl;
+export const getUiLanguageOptions = getUiLanguageOptionsImpl;
+export const UI_LANGUAGE_OPTIONS = getUiLanguageOptionsImpl("en");

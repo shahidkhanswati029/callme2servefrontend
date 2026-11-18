@@ -10,6 +10,7 @@ import { ThemeLanguageSync } from "@/modules/layout/ThemeLanguageSync";
 import { CookieConsent } from "@/modules/layout/CookieConsent";
 import { ToastProvider } from "@/shared/toast/ToastProvider";
 import { ConfirmProvider } from "@/shared/confirm/ConfirmProvider";
+import { OfflineBanner } from "@/shared/ui/OfflineBanner";
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -27,6 +28,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           <ThemeLanguageSync />
           <AutoPlaceOnLogin />
           <CookieConsent />
+          <OfflineBanner />
           {children}
         </ConfirmProvider>
       </ToastProvider>

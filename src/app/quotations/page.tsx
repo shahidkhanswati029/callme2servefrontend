@@ -39,7 +39,9 @@ function Inner() {
   const [mine, setMine] = useState<QuotationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [category, setCategory] = useState(CATEGORIES[0].id);
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]["id"]>(
+    CATEGORIES[0].id,
+  );
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
@@ -144,7 +146,9 @@ function Inner() {
               <select
                 className="mt-1 w-full rounded-xl border border-line px-3 py-2"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) =>
+                  setCategory(e.target.value as (typeof CATEGORIES)[number]["id"])
+                }
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>

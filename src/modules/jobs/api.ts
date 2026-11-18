@@ -20,7 +20,7 @@ export type JobRow = {
   packageRate: number;
   commission: number;
   netToWorker: number;
-  status: "OPEN" | "ACCEPTED" | "COMPLETED" | "CANCELLED";
+  status: "OPEN" | "BOOKED" | "ACCEPTED" | "COMPLETED" | "CANCELLED";
   rail: string | null;
   completedAt: string | null;
   createdAt: string;

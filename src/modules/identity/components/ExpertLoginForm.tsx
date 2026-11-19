@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   browserSupportsWebAuthn,
   startAuthentication,
@@ -22,10 +22,15 @@ export function ExpertLoginForm() {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [sensorOk, setSensorOk] = useState(true);
+
+  useEffect(() => {
+    setSensorOk(browserSupportsWebAuthn());
+  }, []);
 
   async function signInWithBiometrics() {
     if (!browserSupportsWebAuthn()) {
-      toast.error("This device does not support fingerprint / face sign-in");
+      toast.info("No fingerprint / face on this device. Continue with Google or Facebook.");
       return;
     }
     setBusy(true);
@@ -65,14 +70,15 @@ export function ExpertLoginForm() {
             Sign in
           </p>
           <h2 className="display" style={{ fontSize: "2.6rem", margin: "0.6rem 0" }}>
-            The sensor
+            {sensorOk ? "The sensor" : "Google or"}
           </h2>
           <h2 className="display" style={{ fontSize: "2.6rem", margin: 0 }}>
-            knows you.
+            {sensorOk ? "knows you." : "Facebook."}
           </h2>
           <p className="lede" style={{ marginTop: "1rem" }}>
-            Fingerprint or face on this device. Google or Facebook is only the
-            fallback — same account.
+            {sensorOk
+              ? "Fingerprint or face on this device. Google or Facebook is the fallback — same account."
+              : "This device has no fingerprint or face sensor. Continue with Google or Facebook."}
           </p>
         </div>
       }
@@ -83,35 +89,48 @@ export function ExpertLoginForm() {
         Expert sign-in
       </h2>
 
-      <div className="bio-hero">
-        <div className="bio-hero-ring">◉</div>
-      </div>
-      <p style={{ color: "var(--success)", fontWeight: 700, margin: "0 0 0.35rem" }}>
-        Use fingerprint or face
-      </p>
-      <p className="lede" style={{ marginBottom: "1.25rem" }}>
-        No email or password. Match happens on this device. We never store a
-        fingerprint image.
-      </p>
+      {sensorOk ? (
+        <>
+          <div className="bio-hero">
+            <div className="bio-hero-ring">◉</div>
+          </div>
+          <p style={{ color: "var(--success)", fontWeight: 700, margin: "0 0 0.35rem" }}>
+            Use fingerprint or face
+          </p>
+          <p className="lede" style={{ marginBottom: "1.25rem" }}>
+            No email or password. Match happens on this device. We never store a
+            fingerprint image.
+          </p>
 
-      <button
-        type="button"
-        className="btn btn-primary"
-        disabled={busy}
-        onClick={signInWithBiometrics}
-      >
-        {busy ? (
-          <span className="inline-flex items-center gap-2">
-            <ButtonLoader /> Waiting for sensor…
-          </span>
-        ) : (
-          "Sign in with fingerprint / face"
-        )}
-      </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={busy}
+            onClick={signInWithBiometrics}
+          >
+            {busy ? (
+              <span className="inline-flex items-center gap-2">
+                <ButtonLoader /> Waiting for sensor…
+              </span>
+            ) : (
+              "Sign in with fingerprint / face"
+            )}
+          </button>
 
-      <p className="eyebrow" style={{ marginTop: "1.5rem" }}>
-        Fallback, same account
-      </p>
+          <p className="eyebrow" style={{ marginTop: "1.5rem" }}>
+            Or continue without the sensor
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="note-box" style={{ marginBottom: "1.1rem" }}>
+            <strong>No fingerprint / face on this device</strong>
+            Continue with Google or Facebook — same expert account.
+          </div>
+          <p className="eyebrow">Continue without biometrics</p>
+        </>
+      )}
+
       <div className="stack" style={{ marginTop: "0.65rem" }}>
         <GoogleSignInButton />
         <FacebookSignInButton />

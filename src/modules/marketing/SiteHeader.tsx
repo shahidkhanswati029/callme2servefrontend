@@ -56,19 +56,21 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
         </div>
       ) : null}
       <div className="border-b border-line bg-cream/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-nowrap items-center gap-2 px-4 py-2.5 sm:px-6 lg:gap-3">
           <Link href="/" className="shrink-0">
             <BrandMark compact />
           </Link>
 
-          <nav className="hidden items-center gap-4 text-sm font-semibold text-muted xl:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 whitespace-nowrap text-[0.8rem] font-semibold text-muted lg:flex xl:gap-4 xl:text-sm">
             {NAV.map((n) => {
               const active = pathname === n.href;
               return (
                 <Link
                   key={n.href}
                   href={n.href}
-                  className={`cmts-nav-link ${active ? "is-active text-forest" : "hover:text-forest"}`}
+                  className={`cmts-nav-link transition-colors duration-200 ${
+                    active ? "is-active text-forest" : "hover:text-forest"
+                  }`}
                 >
                   {n.label}
                 </Link>
@@ -76,15 +78,9 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
             })}
           </nav>
 
-          <div className="hidden flex-wrap items-center justify-end gap-2 xl:flex">
-            <Link
-              href="/login"
-              className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
-            >
-              {t(language, "account")}
-            </Link>
+          <div className="hidden shrink-0 flex-nowrap items-center gap-1.5 lg:flex xl:gap-2">
             <select
-              className="max-w-[8.5rem] rounded-xl border border-line bg-paper px-2 py-2 text-xs font-semibold"
+              className="max-w-[7.25rem] rounded-lg border border-line bg-paper px-2 py-1.5 text-[0.7rem] font-semibold xl:max-w-[8.5rem] xl:rounded-xl xl:text-xs"
               value={language}
               aria-label={t(language, "language")}
               onChange={(e) => {
@@ -108,7 +104,7 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
               ))}
             </select>
             <select
-              className="max-w-[9rem] rounded-xl border border-line bg-paper px-2 py-2 text-xs font-semibold"
+              className="max-w-[7.5rem] rounded-lg border border-line bg-paper px-2 py-1.5 text-[0.7rem] font-semibold xl:max-w-[9rem] xl:rounded-xl xl:text-xs"
               value={countryCode}
               aria-label={t(language, "country")}
               onChange={(e) => dispatch(setCountry(e.target.value))}
@@ -120,7 +116,7 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
               ))}
             </select>
             <select
-              className="rounded-xl border border-line bg-paper px-2 py-2 text-xs font-semibold"
+              className="rounded-lg border border-line bg-paper px-2 py-1.5 text-[0.7rem] font-semibold xl:rounded-xl xl:text-xs"
               value={currency}
               aria-label="Currency"
               onChange={(e) => dispatch(setCurrency(e.target.value))}
@@ -134,13 +130,13 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
             <button
               type="button"
               onClick={() => dispatch(toggleTheme())}
-              className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
+              className="cmts-press rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[0.7rem] font-semibold transition-colors duration-200 xl:rounded-xl xl:px-3 xl:text-xs"
             >
               {theme === "light" ? t(language, "dark") : t(language, "light")}
             </button>
             <Link
               href="/login"
-              className="cmts-press rounded-xl bg-forest px-4 py-2 text-sm font-semibold text-paper"
+              className="cmts-press rounded-lg bg-forest px-3.5 py-1.5 text-xs font-semibold text-paper transition-opacity duration-200 hover:opacity-90 xl:rounded-xl xl:px-4 xl:py-2 xl:text-sm"
             >
               {t(language, "login")}
             </Link>
@@ -148,7 +144,7 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
 
           <button
             type="button"
-            className="relative z-50 ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-paper xl:hidden"
+            className="relative z-50 ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-paper lg:hidden"
             aria-label={menuOpen ? "Hide menu" : "Show menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -175,14 +171,14 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
         </div>
 
         {menuOpen ? (
-          <div className="animate-drawer border-t border-line px-4 py-3 xl:hidden sm:px-6">
+          <div className="animate-drawer border-t border-line px-4 py-3 lg:hidden sm:px-6">
             <div className="mx-auto grid max-w-6xl gap-3">
               <nav className="grid gap-1 text-sm font-semibold text-muted">
                 {NAV.map((n) => (
                   <Link
                     key={n.href}
                     href={n.href}
-                    className={`rounded-lg px-3 py-2 ${
+                    className={`rounded-lg px-3 py-2 transition-colors duration-200 ${
                       pathname === n.href
                         ? "bg-mint text-forest"
                         : "hover:bg-paper hover:text-forest"
@@ -252,22 +248,13 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
                 </button>
               </div>
 
-              <div className="grid gap-2 border-t border-line pt-3 sm:grid-cols-2">
-                <Link
-                  href="/login"
-                  className="rounded-xl border border-line bg-paper px-3 py-2 text-center text-xs font-semibold"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t(language, "account")}
-                </Link>
-                <Link
-                  href="/login"
-                  className="rounded-xl bg-forest px-4 py-2 text-center text-sm font-semibold text-paper"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t(language, "login")}
-                </Link>
-              </div>
+              <Link
+                href="/login"
+                className="rounded-xl bg-forest px-4 py-2 text-center text-sm font-semibold text-paper"
+                onClick={() => setMenuOpen(false)}
+              >
+                {t(language, "login")}
+              </Link>
             </div>
           </div>
         ) : null}

@@ -6,6 +6,49 @@ import { useAppSelector } from "@/store/hooks";
 import { t } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 
+const SOCIAL = [
+  {
+    key: "facebook",
+    label: "Facebook",
+    href: "https://www.facebook.com/",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+        <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.84c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z" />
+      </svg>
+    ),
+  },
+  {
+    key: "linkedin",
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+        <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z" />
+      </svg>
+    ),
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    href: "https://www.instagram.com/",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+        <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5zm5.75-3.25a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1z" />
+      </svg>
+    ),
+  },
+  {
+    key: "x",
+    label: "X",
+    href: "https://x.com/",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-current">
+        <path d="M18.9 2H22l-6.78 7.75L23 22h-6.4l-5-6.55L5.9 22H2.1l7.25-8.28L1 2h6.55l4.52 5.98L18.9 2zm-1.12 18h1.78L6.35 3.9H4.44L17.78 20z" />
+      </svg>
+    ),
+  },
+] as const;
+
 export function SiteFooter() {
   const lang = useUiLanguage();
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
@@ -22,14 +65,19 @@ export function SiteFooter() {
           <p className="mt-3 text-xs font-semibold text-brass">
             {countryCode} · {currency}
           </p>
-          <div className="mt-4 flex gap-2 text-xs font-bold">
-            {["Fb", "X", "In", "Ig"].map((s) => (
-              <span
-                key={s}
-                className="cmts-press grid h-9 w-9 place-items-center rounded-full border border-white/20 text-[#d5e0d8]"
+          <div className="mt-4 flex gap-2">
+            {SOCIAL.map((s) => (
+              <a
+                key={s.key}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                title={s.label}
+                className="cmts-press grid h-9 w-9 place-items-center rounded-full border border-white/20 text-[#d5e0d8] transition-colors hover:border-brass hover:text-brass"
               >
-                {s}
-              </span>
+                {s.icon}
+              </a>
             ))}
           </div>
         </div>

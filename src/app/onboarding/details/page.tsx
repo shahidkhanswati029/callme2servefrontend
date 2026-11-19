@@ -30,7 +30,7 @@ function DetailsInner() {
   const countries = useMemo(() => listCountries(), []);
   const [country, setCountry] = useState(account.country || "PK");
   const [languagesText, setLanguagesText] = useState(
-    account.languages.length ? account.languages.join(", ") : "Urdu, English, Punjabi",
+    account.languages.length ? account.languages.join(", ") : "",
   );
   const speakPresets = ["Urdu", "English", "Punjabi", "Sindhi", "Pashto"];
 
@@ -47,10 +47,21 @@ function DetailsInner() {
       .map((s) => s.trim())
       .filter(Boolean);
     try {
-      const city = String(fd.get("city") || "");
-      const placeLabel = String(fd.get("placeLabel") || "") || city;
+      const city = String(fd.get("city") || "").trim();
+      const placeLabel = String(fd.get("placeLabel") || "").trim();
+      const work = String(fd.get("work") || "").trim();
+      if (!city || !placeLabel) {
+        toast.error("City and place are required");
+        setBusy(false);
+        return;
+      }
+      if (!work) {
+        toast.error("Work is required");
+        setBusy(false);
+        return;
+      }
       const res = await identityApi.saveDetails(getAccessToken(), {
-        work: String(fd.get("work") || ""),
+        work,
         languages,
         city,
         placeLabel,
@@ -64,7 +75,7 @@ function DetailsInner() {
         }),
       );
       toast.success(res.message || "Details saved");
-      router.push("/onboarding/biometrics");
+      router.push("/home");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save details");
     } finally {
@@ -81,21 +92,20 @@ function DetailsInner() {
             Your details
           </p>
           <h2 className="display" style={{ fontSize: "2.3rem", margin: "0.5rem 0" }}>
-            Work, city, languages.
+            City and place.
           </h2>
           <p className="lede">
-            The institute and the factory wait until you pick a shop type.
+            Fill the required fields below. Use the placeholders as a guide.
           </p>
         </div>
       }
     >
       <p className="eyebrow">After Google / Facebook</p>
       <h2 className="display" style={{ fontSize: "2rem", margin: "0.25rem 0 0.75rem" }}>
-        What you do
+        Finish your profile
       </h2>
       <p className="lede" style={{ marginBottom: "1.25rem" }}>
-        Hello {account.name}. Shop names wait — this screen is only work, place, and
-        languages.
+        Hello {account.name}. City and place are required so nearby experts can find you.
       </p>
 
       <form className="stack-lg" onSubmit={onSubmit}>
@@ -104,11 +114,12 @@ function DetailsInner() {
           <input
             name="work"
             required
-            defaultValue={account.work || "Surgical instrument maker"}
+            defaultValue={account.work || ""}
+            placeholder="e.g. Tutor, Electrician, Surgical"
           />
         </label>
         <div className="field">
-          <span>Languages (pick or write)</span>
+          <span>Languages (optional)</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", margin: "0.4rem 0" }}>
             {speakPresets.map((p) => {
               const on = languagesText
@@ -142,22 +153,27 @@ function DetailsInner() {
           </div>
           <input
             name="languages"
-            required
             value={languagesText}
             onChange={(e) => setLanguagesText(e.target.value)}
             placeholder="Urdu, English, Punjabi"
           />
         </div>
         <label className="field">
-          <span>City</span>
-          <input name="city" required defaultValue={account.city || "Sialkot"} />
+          <span>City *</span>
+          <input
+            name="city"
+            required
+            defaultValue={account.city || ""}
+            placeholder="e.g. Sialkot"
+          />
         </label>
         <label className="field">
-          <span>Place on the map</span>
+          <span>Place on the map *</span>
           <input
             name="placeLabel"
-            defaultValue={account.placeLabel || "Ugoki Road, Sialkot"}
-            placeholder="Ugoki Road, Sialkot"
+            required
+            defaultValue={account.placeLabel || ""}
+            placeholder="e.g. Ugoki Road, Sialkot"
           />
         </label>
         <label className="field">
@@ -175,7 +191,7 @@ function DetailsInner() {
           <input name="phone" defaultValue={account.phone || ""} placeholder="+92 …" />
         </label>
         <button className="btn btn-primary" type="submit" disabled={busy}>
-          {busy ? <ButtonLoader /> : "Save details"}
+          {busy ? <ButtonLoader /> : "Save and continue"}
         </button>
       </form>
     </LaptopChrome>

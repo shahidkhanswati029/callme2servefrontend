@@ -33,8 +33,7 @@ export function GoogleSignInButton({
       );
       toast.success(res.message || "Google sign-in successful");
       const a = res.data.account;
-      if (!a.work || !a.city) router.push("/onboarding/details");
-      else if (!a.hasWebAuthn) router.push("/onboarding/biometrics");
+      if (!a.city?.trim() || !a.placeLabel?.trim()) router.push("/onboarding/details");
       else router.push("/home");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google failed");

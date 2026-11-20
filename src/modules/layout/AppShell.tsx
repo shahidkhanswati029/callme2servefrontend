@@ -256,8 +256,12 @@ export function AppShell({
             <button
               type="button"
               onClick={() => {
-                // Stay inside the app — never browser-back to landing/login.
-                router.replace(isDesk ? "/desk" : "/inbox");
+                // Normal in-app back; SignedInRouteGuard blocks auth pages if hit.
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.replace(isDesk ? "/desk" : "/inbox");
+                }
               }}
               className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold"
             >
@@ -272,8 +276,12 @@ export function AppShell({
               <button
                 type="button"
                 onClick={() => {
-                  // Stay inside the app — never browser-back to landing/login.
-                  router.replace(isDesk ? "/desk" : "/home");
+                  // Normal in-app back; SignedInRouteGuard blocks auth pages if hit.
+                  if (typeof window !== "undefined" && window.history.length > 1) {
+                    router.back();
+                  } else {
+                    router.replace(isDesk ? "/desk" : "/home");
+                  }
                 }}
                 className="rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold"
                 aria-label={t(lang, "back")}

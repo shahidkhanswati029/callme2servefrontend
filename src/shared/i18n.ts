@@ -4,6 +4,9 @@
  * UI copy  → src/shared/locales/{lang}.json
  * DB labels → canonical English in DB + db-aliases.json → locale keys
  *
+ * tDynamic also auto-translates free-form English word/phrase-by-phrase by
+ * reverse-looking up en.json values and aliases (no per-string hardcoding).
+ *
  * Public API: t, tDynamic, tExpertCard, canonicalizeCity, …
  */
 import enJson from "./locales/en.json";
@@ -76,9 +79,93 @@ function normKey(value: string): string {
     .replace(/\s+/g, " ");
 }
 
+/** English UI value → locale key, so DB/UI English text auto-maps without per-string hardcoding. */
+const EN_VALUE_TO_KEY: Record<string, string> = {};
+const EN_KEYS = new Set(Object.keys(en));
+for (const [key, value] of Object.entries(en)) {
+  if (!value || typeof value !== "string") continue;
+  const folded = normKey(value);
+  if (!folded) continue;
+  // Prefer first write for collisions.
+  if (!EN_VALUE_TO_KEY[folded]) EN_VALUE_TO_KEY[folded] = key;
+}
+
 function tImpl(lang: UiLanguage, key: string): string {
   if (lang === "en") return dict.en[key] || key;
   return dict[lang]?.[key] || dict.en[key] || key;
+}
+
+/** Resolve one token/phrase to a locale key, if known. */
+function resolveLocaleKey(token: string): string | null {
+  const raw = token.trim();
+  if (!raw) return null;
+  if (EN_KEYS.has(raw)) return raw;
+
+  const n = normKey(raw);
+  if (!n) return null;
+
+  const cityLocale =
+    CITY_ALIASES[raw] || CITY_ALIASES[n] || CITY_ALIASES[n.replace(/\s+/g, "")];
+  if (cityLocale) return cityLocale;
+
+  if (DYNAMIC_MAP[n]) return DYNAMIC_MAP[n];
+  const compact = n.replace(/\s+/g, "");
+  if (DYNAMIC_MAP[compact]) return DYNAMIC_MAP[compact];
+  if (WORD_MAP[n]) return WORD_MAP[n];
+  if (EN_VALUE_TO_KEY[n]) return EN_VALUE_TO_KEY[n];
+
+  for (const p of PHRASE_MAP) {
+    if (p.match.test(n)) return p.key;
+  }
+  return null;
+}
+
+/**
+ * Translate a free-form English (or mixed) string using locale dictionaries:
+ * longest phrase match first, then word-by-word — no per-string hardcoding required
+ * as long as the English wording exists in en.json / aliases.
+ */
+function autoTranslateText(lang: UiLanguage, text: string): string {
+  if (lang === "en") return text;
+
+  const wholeKey = resolveLocaleKey(text);
+  if (wholeKey) return tImpl(lang, wholeKey);
+
+  // Keep punctuation / separators; translate alphabetic runs.
+  const parts = text.split(/([^\p{L}\p{N}']+)/u);
+  const wordsOnly = parts.filter((p) => /[\p{L}\p{N}]/u.test(p));
+  if (wordsOnly.length === 0) return text;
+
+  // Greedy longest n-gram match over word tokens (max 6 words).
+  const wordIdx: number[] = [];
+  parts.forEach((p, i) => {
+    if (/[\p{L}\p{N}]/u.test(p)) wordIdx.push(i);
+  });
+
+  const out = parts.slice();
+  let wi = 0;
+  while (wi < wordIdx.length) {
+    let matched = false;
+    const maxN = Math.min(6, wordIdx.length - wi);
+    for (let n = maxN; n >= 1; n -= 1) {
+      const start = wordIdx[wi];
+      const end = wordIdx[wi + n - 1];
+      const slice = parts.slice(start, end + 1).join("");
+      const key = resolveLocaleKey(slice);
+      if (key) {
+        out[start] = tImpl(lang, key);
+        for (let j = start + 1; j <= end; j += 1) out[j] = "";
+        wi += n;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // Single word: try as-is; leave unknown words unchanged.
+      wi += 1;
+    }
+  }
+  return out.join("");
 }
 
 function canonicalizeCityImpl(raw: string | null | undefined): string {
@@ -142,34 +229,14 @@ function tDynamicImpl(lang: UiLanguage, value: string | null | undefined): strin
   const countryKey = `country${raw.toUpperCase()}`;
   if (dict.en[countryKey]) return tImpl(lang, countryKey);
 
-  const n = normKey(raw);
-  const cityLocale =
-    CITY_ALIASES[raw] || CITY_ALIASES[n] || CITY_ALIASES[n.replace(/\s+/g, "")];
-  if (cityLocale) return tImpl(lang, cityLocale);
-
-  if (DYNAMIC_MAP[n]) return tImpl(lang, DYNAMIC_MAP[n]);
-  const compact = n.replace(/\s+/g, "");
-  if (DYNAMIC_MAP[compact]) return tImpl(lang, DYNAMIC_MAP[compact]);
-  for (const p of PHRASE_MAP) {
-    if (p.match.test(n)) return tImpl(lang, p.key);
-  }
-  const words = n.split(" ");
-  let hit = 0;
-  const out = words.map((w) => {
-    const cityW = CITY_ALIASES[w];
-    const k = cityW || WORD_MAP[w];
-    if (k) {
-      hit += 1;
-      return tImpl(lang, k);
-    }
-    return w;
-  });
-  if (hit > 0) return out.join(" ");
   if (lang === "en") {
     const canon = canonicalizeCityImpl(raw);
     if (canon && canon !== raw && /^[\x00-\x7F]+$/.test(canon)) return canon;
+    return raw;
   }
-  return raw;
+
+  // Auto word/phrase translation from locale dictionaries + aliases (no per-string hardcoding).
+  return autoTranslateText(lang, raw);
 }
 
 function tExpertCardImpl(

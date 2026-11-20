@@ -33,7 +33,7 @@ export function DeskLoginForm() {
         }),
       );
       toast.success(res.message || "Desk signed in");
-      router.push("/desk");
+      router.replace("/desk");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Desk sign-in failed");
     } finally {

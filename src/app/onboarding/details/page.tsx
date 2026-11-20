@@ -75,7 +75,7 @@ function DetailsInner() {
         }),
       );
       toast.success(res.message || "Details saved");
-      router.push("/home");
+      router.replace("/home");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save details");
     } finally {

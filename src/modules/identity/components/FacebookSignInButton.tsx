@@ -92,8 +92,8 @@ export function FacebookSignInButton({
       );
       toast.success(res.message || "Facebook sign-in successful");
       const a = res.data.account;
-      if (!a.city?.trim() || !a.placeLabel?.trim()) router.push("/onboarding/details");
-      else router.push("/home");
+      if (!a.city?.trim() || !a.placeLabel?.trim()) router.replace("/onboarding/details");
+      else router.replace("/home");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Facebook failed";
       if (/facebook|domain|unavailable|origin|app.?id/i.test(msg)) {

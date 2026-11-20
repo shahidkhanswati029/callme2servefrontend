@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useAppSelector } from "@/store/hooks";
 import { Loader } from "@/shared/ui/Loader";
 import { sessionCookies } from "@/shared/cookies";
+import { homeForAccount } from "@/modules/identity/authRoutes";
 
 const DESK_PREFIXES = ["/desk"];
 const EXPERT_ONLY_PREFIXES = [
@@ -18,6 +19,9 @@ const EXPERT_ONLY_PREFIXES = [
   "/refer",
   "/alarms",
   "/onboarding",
+  "/quotations",
+  "/portfolio",
+  "/account",
 ];
 
 function pathMatches(pathname: string, prefixes: string[]) {
@@ -31,10 +35,7 @@ export function GuestOnly({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hydrated || !account) return;
-    if (account.seat === "DESK") router.replace("/desk");
-    else if (!account.city?.trim() || !account.placeLabel?.trim())
-      router.replace("/onboarding/details");
-    else router.replace("/home");
+    router.replace(homeForAccount(account));
   }, [hydrated, account, router]);
 
   if (!hydrated || status === "loading") return <Loader full label="Checking session…" />;

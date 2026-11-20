@@ -49,7 +49,7 @@ export function ExpertLoginForm() {
         }),
       );
       toast.success(res.message || "Fingerprint matched");
-      router.push("/home");
+      router.replace("/home");
     } catch (err) {
       toast.error(
         err instanceof Error

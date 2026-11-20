@@ -41,7 +41,7 @@ function BioInner() {
 
   function continueWithout() {
     toast.info("Continuing without fingerprint or face on this device");
-    router.push("/home");
+    router.replace("/home");
   }
 
   async function enroll(deviceHint: "fingerprint" | "face") {
@@ -60,7 +60,7 @@ function BioInner() {
       dispatch(setAccount(res.data.account));
       toast.success(res.message || "Device enrolled");
       if (res.data.account.fingerprintEnrolled && res.data.account.faceEnrolled) {
-        router.push("/home");
+        router.replace("/home");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Enrollment failed");
@@ -169,7 +169,7 @@ function BioInner() {
           style={{ marginTop: "0.65rem" }}
           type="button"
           disabled={busy !== null}
-          onClick={() => router.push("/home")}
+          onClick={() => router.replace("/home")}
         >
           Continue to home
         </button>

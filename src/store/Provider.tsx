@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { makeStore, type AppStore } from "./index";
 import { SessionBootstrap } from "@/modules/identity/components/SessionBootstrap";
+import { SignedInRouteGuard } from "@/modules/identity/components/SignedInRouteGuard";
 import { AutoPlaceOnLogin } from "@/modules/location/AutoPlaceOnLogin";
 import { ThemeLanguageSync } from "@/modules/layout/ThemeLanguageSync";
 import { CookieConsent } from "@/modules/layout/CookieConsent";
@@ -25,6 +26,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       <ToastProvider>
         <ConfirmProvider>
           <SessionBootstrap />
+          <SignedInRouteGuard />
           <ThemeLanguageSync />
           <AutoPlaceOnLogin />
           <CookieConsent />

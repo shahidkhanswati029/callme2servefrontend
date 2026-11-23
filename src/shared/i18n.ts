@@ -132,14 +132,19 @@ function autoTranslateText(lang: UiLanguage, text: string): string {
   if (wholeKey) return tImpl(lang, wholeKey);
 
   // Keep punctuation / separators; translate alphabetic runs.
-  const parts = text.split(/([^\p{L}\p{N}']+)/u);
-  const wordsOnly = parts.filter((p) => /[\p{L}\p{N}]/u.test(p));
+  // Avoid \\p{L} (Unicode property) for broader runtime compatibility.
+  const parts = text.split(/([^A-Za-z0-9\u00C0-\u024F\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\u3040-\u30FF\u4E00-\u9FFF']+)/);
+  const isWord = (p: string) =>
+    /[A-Za-z0-9\u00C0-\u024F\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\u3040-\u30FF\u4E00-\u9FFF]/.test(
+      p,
+    );
+  const wordsOnly = parts.filter(isWord);
   if (wordsOnly.length === 0) return text;
 
   // Greedy longest n-gram match over word tokens (max 6 words).
   const wordIdx: number[] = [];
   parts.forEach((p, i) => {
-    if (/[\p{L}\p{N}]/u.test(p)) wordIdx.push(i);
+    if (isWord(p)) wordIdx.push(i);
   });
 
   const out = parts.slice();

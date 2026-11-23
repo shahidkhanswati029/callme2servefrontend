@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { MarketingShell } from "@/modules/marketing/MarketingShell";
 import { PageHero } from "@/modules/marketing/PageHero";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const FAQS = [
   {
@@ -32,34 +35,55 @@ const FAQS = [
 ];
 
 export default function FaqPage() {
+  const lang = useUiLanguage();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
   return (
     <MarketingShell>
       <PageHero
-        eyebrow="FAQ"
+        compact
+        eyebrow={t(lang, "faq")}
         title="Answers from the build plan"
-        lede="Short answers aligned with the CallMeToServe development plan — not marketing fluff."
+        lede="Short answers aligned with the CallMeToServe development plan - not marketing fluff."
       />
-      <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <section className="relative z-[1] mx-auto max-w-3xl bg-paper px-4 py-8 sm:px-6 sm:py-10">
         <div className="grid gap-3">
-          {FAQS.map((item) => (
-            <details
-              key={item.q}
-              className="group rounded-2xl border border-line bg-cream px-4 py-3 open:border-forest"
-            >
-              <summary className="cursor-pointer list-none font-semibold marker:content-none">
-                <span className="flex items-center justify-between gap-3">
-                  {item.q}
-                  <span className="text-brass group-open:rotate-45">+</span>
-                </span>
-              </summary>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{item.a}</p>
-            </details>
-          ))}
+          {FAQS.map((item, index) => {
+            const open = openIndex === index;
+            return (
+              <div
+                key={item.q}
+                className={`rounded-2xl border bg-cream px-4 py-3 ${
+                  open ? "border-forest" : "border-line"
+                }`}
+              >
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 text-left font-semibold text-ink"
+                  aria-expanded={open}
+                  onClick={() => setOpenIndex(open ? null : index)}
+                >
+                  <span>{item.q}</span>
+                  <span
+                    className={`shrink-0 text-brass transition-transform duration-200 ${
+                      open ? "rotate-45" : ""
+                    }`}
+                    aria-hidden
+                  >
+                    +
+                  </span>
+                </button>
+                {open ? (
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{item.a}</p>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
         <p className="mt-8 text-sm text-muted">
           Still stuck?{" "}
           <Link href="/contact" className="font-semibold text-forest underline">
-            Contact the desk
+            {t(lang, "contact")}
           </Link>
           .
         </p>

@@ -7,14 +7,15 @@ export function BrandMark({
 }) {
   return (
     <div className={`flex items-center gap-3 ${compact ? "" : "mb-6"} ${className}`}>
-      <div
-        className={`relative grid place-items-center rounded-[0.85rem] bg-forest text-paper ${
-          compact ? "h-10 w-10" : "h-12 w-12"
-        }`}
-      >
-        <span className={`font-bold ${compact ? "text-base" : "text-lg"}`}>C</span>
-        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-sm bg-brass" />
-      </div>
+      {/* Same mark used for favicon / tab icon (public/brand-mark.svg, app/icon.svg) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand-mark.svg"
+        alt="CallMe2Serve"
+        width={compact ? 40 : 48}
+        height={compact ? 40 : 48}
+        className={`shrink-0 rounded-[0.85rem] ${compact ? "h-10 w-10" : "h-12 w-12"}`}
+      />
       <div>
         <h1
           className={`font-display font-bold leading-none text-ink ${

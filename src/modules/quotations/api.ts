@@ -31,6 +31,8 @@ export type QuotationBid = {
     package: string;
     work: string | null;
     city: string | null;
+    certificates?: Array<{ id: string; title: string; issuer: string | null; fileUrl: string }>;
+    portfolioItems?: Array<{ id: string; title: string; mediaUrl: string; kind: string }>;
   };
 };
 

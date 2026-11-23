@@ -134,6 +134,42 @@ function Inner() {
                   <p className="mt-1 text-xs">
                     ★ {Number(b.bidder?.rating || 0).toFixed(1)} · {b.bidder?.package} · {b.status}
                   </p>
+                  <div className="mt-2 rounded-xl bg-cream px-3 py-2 text-xs">
+                    <p className="font-semibold text-forest">{t(lang, "bidderCredentials")}</p>
+                    {(b.bidder?.certificates?.length || 0) +
+                      (b.bidder?.portfolioItems?.length || 0) ===
+                    0 ? (
+                      <p className="mt-1 text-muted">{t(lang, "noCredentialsYet")}</p>
+                    ) : (
+                      <ul className="mt-1 space-y-1">
+                        {(b.bidder?.certificates || []).map((c) => (
+                          <li key={c.id}>
+                            <a
+                              href={c.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                            >
+                              {c.title}
+                              {c.issuer ? ` · ${c.issuer}` : ""}
+                            </a>
+                          </li>
+                        ))}
+                        {(b.bidder?.portfolioItems || []).map((p) => (
+                          <li key={p.id}>
+                            <a
+                              href={p.mediaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                            >
+                              {p.title} ({p.kind})
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                   {b.status === "PENDING" && data.status === "OPEN" ? (
                     <div className="mt-3 flex gap-2">
                       <button

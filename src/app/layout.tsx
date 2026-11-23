@@ -41,6 +41,11 @@ export const metadata: Metadata = {
     "marketplace",
   ],
   authors: [{ name: "CallMe2Serve" }],
+  icons: {
+    icon: [{ url: "/brand-mark.svg", type: "image/svg+xml" }],
+    shortcut: ["/brand-mark.svg"],
+    apple: [{ url: "/brand-mark.svg" }],
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -49,11 +54,13 @@ export const metadata: Metadata = {
     title: "CallMe2Serve · Find trusted experts near you",
     description:
       "Real experts with live place pins. Ask, accept, pay, and get a real receipt.",
+    images: [{ url: "/brand-mark.svg", alt: "CallMe2Serve" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "CallMe2Serve",
     description: "Find trusted experts near you with live GPS pins.",
+    images: ["/brand-mark.svg"],
   },
   robots: {
     index: true,

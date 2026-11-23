@@ -83,7 +83,7 @@ export default function FaqPage() {
         <p className="mt-8 text-sm text-muted">
           Still stuck?{" "}
           <Link href="/contact" className="font-semibold text-forest underline">
-            {t(lang, "contact")}
+            Contact the desk
           </Link>
           .
         </p>

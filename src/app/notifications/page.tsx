@@ -79,9 +79,36 @@ function Inner() {
 
   useSocket({
     onNotification: (p) => {
-      const n = p as { title?: string; body?: string };
-      toast.info(`${n.title || "Notice"}: ${n.body || ""}`);
-      void load();
+      const n = p as {
+        id?: string;
+        title?: string;
+        body?: string;
+        kind?: string;
+        data?: Record<string, unknown> | null;
+        createdAt?: string;
+      };
+      toast.info(`${n.title || "Notice"}${n.body ? `: ${n.body}` : ""}`);
+      if (n.id && page === 1) {
+        setRows((prev) => {
+          if (prev.some((r) => r.id === n.id)) return prev;
+          return [
+            {
+              id: n.id!,
+              kind: n.kind || "SYSTEM",
+              title: n.title || "Notice",
+              body: n.body || "",
+              readAt: null,
+              createdAt: n.createdAt || new Date().toISOString(),
+              data: n.data || null,
+            },
+            ...prev,
+          ].slice(0, pageSize);
+        });
+        setUnread((u) => u + 1);
+        setTotal((t) => t + 1);
+      } else {
+        void load();
+      }
     },
   });
 

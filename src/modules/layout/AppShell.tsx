@@ -113,8 +113,17 @@ export function AppShell({
   }, [account, isDesk, pathname]);
 
   useSocket({
-    onNotification: () => {
-      setUnread((n) => n + 1);
+    onNotification: (payload) => {
+      const n = payload as { title?: string; body?: string };
+      // Live badge — also re-sync from API so count stays accurate.
+      setUnread((u) => u + 1);
+      void notificationsApi
+        .list(1, 1)
+        .then((res) => setUnread(res.data.unread || 0))
+        .catch(() => undefined);
+      if (pathname !== "/notifications" && (n.title || n.body)) {
+        toast.info(`${n.title || "Notice"}${n.body ? `: ${n.body}` : ""}`);
+      }
     },
   });
 

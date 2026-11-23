@@ -12,7 +12,6 @@ import { jobsApi } from "@/modules/jobs/api";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { notificationsApi } from "@/modules/notifications/api";
-import { registerPushToken, listenForegroundPush } from "@/lib/firebase";
 import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
 import { t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
@@ -187,34 +186,17 @@ function HomeInner() {
   }, []);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
     let cancelled = false;
-    const run = async () => {
-      try {
-        const list = await notificationsApi.list(1, 1);
+    void notificationsApi
+      .list(1, 1)
+      .then((list) => {
         if (!cancelled) setUnread(list.data.unread || 0);
-      } catch {
-        // optional
-      }
-      // Defer Firebase — it is heavy and optional; sockets cover in-app alerts.
-      await new Promise((r) => setTimeout(r, 2500));
-      if (cancelled) return;
-      try {
-        const token = await registerPushToken();
-        if (token) await notificationsApi.savePushToken(token);
-        unsub = (await listenForegroundPush((title, body) => {
-          toast.info(`${title}: ${body}`);
-        })) as (() => void) | undefined;
-      } catch {
-        // optional
-      }
-    };
-    void run();
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
-      if (typeof unsub === "function") unsub();
     };
-  }, [toast]);
+  }, []);
 
   const accountWithCoords = account as typeof account & {
     latitude?: number | null;

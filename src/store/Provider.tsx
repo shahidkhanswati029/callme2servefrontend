@@ -12,6 +12,8 @@ import { CookieConsent } from "@/modules/layout/CookieConsent";
 import { ToastProvider } from "@/shared/toast/ToastProvider";
 import { ConfirmProvider } from "@/shared/confirm/ConfirmProvider";
 import { OfflineBanner } from "@/shared/ui/OfflineBanner";
+import { SocketProvider } from "@/modules/chat/SocketProvider";
+import { PushRegistrar } from "@/modules/notifications/PushRegistrar";
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -25,13 +27,16 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <Provider store={storeRef.current}>
       <ToastProvider>
         <ConfirmProvider>
-          <SessionBootstrap />
-          <SignedInRouteGuard />
-          <ThemeLanguageSync />
-          <AutoPlaceOnLogin />
-          <CookieConsent />
-          <OfflineBanner />
-          {children}
+          <SocketProvider>
+            <SessionBootstrap />
+            <SignedInRouteGuard />
+            <ThemeLanguageSync />
+            <AutoPlaceOnLogin />
+            <PushRegistrar />
+            <CookieConsent />
+            <OfflineBanner />
+            {children}
+          </SocketProvider>
         </ConfirmProvider>
       </ToastProvider>
     </Provider>

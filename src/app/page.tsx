@@ -173,6 +173,14 @@ export default function WelcomePage() {
                 "radial-gradient(ellipse 70% 55% at 12% 15%, rgba(224,154,43,0.32), transparent 55%), radial-gradient(ellipse 45% 40% at 88% 8%, rgba(229,242,235,0.12), transparent 50%)",
             }}
           />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-16 top-24 h-40 w-40 rounded-full bg-brass/20 blur-2xl animate-drift"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-10 bottom-20 h-48 w-48 rounded-full bg-paper/10 blur-3xl animate-float"
+          />
           <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
             <div>
               <p className="animate-rise text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
@@ -189,8 +197,12 @@ export default function WelcomePage() {
                   t(language, "instantAsk"),
                   t(language, "verifiedPlace"),
                   t(language, "realReceipts"),
-                ].map((label) => (
-                  <span key={label} className="inline-flex items-center gap-2">
+                ].map((label, i) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-2 animate-bob"
+                    style={{ animationDelay: `${i * 0.35}s` }}
+                  >
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-brass text-forest animate-glow">
                       ✓
                     </span>
@@ -200,7 +212,7 @@ export default function WelcomePage() {
               </div>
               <Link
                 href="/login"
-                className="cmts-press animate-rise mt-8 inline-flex rounded-xl bg-brass px-5 py-3 text-sm font-bold uppercase tracking-wide text-forest shadow-[0_12px_32px_rgba(224,154,43,0.35)] [animation-delay:220ms]"
+                className="cmts-press animate-rise mt-8 inline-flex cursor-pointer rounded-xl bg-brass px-5 py-3 text-sm font-bold uppercase tracking-wide text-forest shadow-[0_12px_32px_rgba(224,154,43,0.35)] hover:cursor-pointer [animation-delay:220ms]"
               >
                 {t(language, "expertCta")}
               </Link>
@@ -314,19 +326,20 @@ export default function WelcomePage() {
             </Link>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {catCards.map((c) => (
-              <Link
-                key={c.name}
-                href={`/search?category=${encodeURIComponent(c.name)}`}
-                className="cmts-card rounded-2xl border border-line bg-cream px-4 py-5"
-              >
-                <p className="font-semibold">{tDynamic(language, c.name)}</p>
-                <p className="mt-1 text-xs text-muted">
-                  {c.experts}{" "}
-                  {c.experts === 1 ? t(language, "expertSingular") : t(language, "expertsLabel")} ·{" "}
-                  {currency}
-                </p>
-              </Link>
+            {catCards.map((c, i) => (
+              <Reveal key={c.name} delay={i * 60} variant="scale">
+                <Link
+                  href={`/search?category=${encodeURIComponent(c.name)}`}
+                  className="cmts-card block cursor-pointer rounded-2xl border border-line bg-cream px-4 py-5 hover:cursor-pointer"
+                >
+                  <p className="font-semibold">{tDynamic(language, c.name)}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    {c.experts}{" "}
+                    {c.experts === 1 ? t(language, "expertSingular") : t(language, "expertsLabel")} ·{" "}
+                    {currency}
+                  </p>
+                </Link>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -339,11 +352,11 @@ export default function WelcomePage() {
               </h2>
               <p className="mt-1 text-sm text-muted">{t(language, "livePinsCountry")}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {featured.map((e) => (
+                {featured.map((e, i) => (
+                  <Reveal key={e.id} delay={i * 70} variant="rise">
                   <Link
-                    key={e.id}
                     href={`/search?q=${encodeURIComponent(e.name)}&country=${countryCode}`}
-                    className={`cmts-card rounded-2xl border bg-cream p-4 ${
+                    className={`cmts-card block cursor-pointer rounded-2xl border bg-cream p-4 hover:cursor-pointer ${
                       e.topRanked
                         ? "border-brass shadow-[0_8px_24px_rgba(224,154,43,0.22)]"
                         : "border-line"
@@ -374,6 +387,7 @@ export default function WelcomePage() {
                       {` · ${tDynamic(language, e.package)}`}
                     </p>
                   </Link>
+                  </Reveal>
                 ))}
               </div>
             </div>
@@ -394,9 +408,9 @@ export default function WelcomePage() {
           ) : (
             <>
               <div className="mt-8 grid gap-4 md:grid-cols-2">
-                {reviews.slice(0, 4).map((r) => (
+                {reviews.slice(0, 4).map((r, i) => (
+                  <Reveal key={r.id} delay={i * 80} variant={i % 2 === 0 ? "slide-left" : "slide-right"}>
                   <article
-                    key={r.id}
                     className="rounded-2xl border border-line bg-cream p-5 shadow-sm"
                   >
                     <p className="text-brass">
@@ -427,6 +441,7 @@ export default function WelcomePage() {
                       </div>
                     </div>
                   </article>
+                  </Reveal>
                 ))}
               </div>
               <p className="mt-6 text-center text-sm font-semibold text-muted">

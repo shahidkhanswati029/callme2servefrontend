@@ -12,11 +12,14 @@ export function LaptopChrome({
       <aside className="hidden flex-col justify-between bg-forest p-8 text-paper lg:flex">
         {panel}
       </aside>
-      <section className="mx-auto w-full max-w-[430px] px-4 py-5 lg:max-w-none lg:px-12 lg:py-10">
-        <p className="mb-4 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-          {url}
-        </p>
-        <div className="animate-rise">{children}</div>
+      <section className="flex w-full justify-center px-4 py-5 lg:px-12 lg:py-10">
+        {/* Keep auth column capped so Google/Facebook hit targets stay full-width on desktop. */}
+        <div className="w-full max-w-[430px]">
+          <p className="mb-4 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
+            {url}
+          </p>
+          <div className="animate-rise">{children}</div>
+        </div>
       </section>
     </div>
   );

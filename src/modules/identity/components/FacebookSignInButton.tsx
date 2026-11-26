@@ -43,6 +43,11 @@ function domainSetupHint() {
   );
 }
 
+const ACCOUNT_UNAVAILABLE =
+  "Facebook sign-in is unavailable for this account right now. " +
+  "If the app is in Development mode, add this Facebook user under Roles → Testers, " +
+  "or switch the app to Live, then try again.";
+
 function isMobileBrowser() {
   if (typeof navigator === "undefined") return false;
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(
@@ -56,6 +61,17 @@ function readHashAccessToken() {
   if (!raw.includes("access_token=")) return null;
   const params = new URLSearchParams(raw);
   return params.get("access_token");
+}
+
+function readOAuthError() {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace(/^#/, "");
+  const search = window.location.search.replace(/^\?/, "");
+  const params = new URLSearchParams(hash || search);
+  const err = params.get("error") || params.get("error_code");
+  const desc = params.get("error_description") || params.get("error_message");
+  if (!err && !desc) return null;
+  return { err: err || "", desc: desc || "" };
 }
 
 export function FacebookSignInButton({
@@ -96,7 +112,9 @@ export function FacebookSignInButton({
       else router.replace("/home");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Facebook failed";
-      if (/facebook|domain|unavailable|origin|app.?id/i.test(msg)) {
+      if (/not found|unavailable|not configured|503|FACEBOOK_NOT/i.test(msg)) {
+        toast.error(ACCOUNT_UNAVAILABLE);
+      } else if (/facebook|domain|origin|app.?id|blocked/i.test(msg)) {
         toast.error(`${msg}. ${domainSetupHint()}`);
       } else {
         toast.error(msg);
@@ -108,6 +126,17 @@ export function FacebookSignInButton({
   }
 
   useEffect(() => {
+    const oauthErr = readOAuthError();
+    if (oauthErr) {
+      window.history.replaceState({}, "", window.location.pathname + window.location.search.replace(/\?.*$/, ""));
+      const text = `${oauthErr.err} ${oauthErr.desc}`.toLowerCase();
+      if (/access_denied|unavailable|not.?available|user.?denied|temporarily/i.test(text)) {
+        toast.error(ACCOUNT_UNAVAILABLE);
+      } else {
+        toast.error(oauthErr.desc || ACCOUNT_UNAVAILABLE);
+      }
+      return;
+    }
     const tokenFromRedirect = readHashAccessToken();
     if (tokenFromRedirect) {
       window.history.replaceState({}, "", window.location.pathname + window.location.search);
@@ -186,9 +215,11 @@ export function FacebookSignInButton({
         try {
           if (!response.authResponse?.accessToken) {
             if (response.status === "unknown" || response.status === "not_authorized") {
-              toast.error(domainSetupHint());
+              toast.error(ACCOUNT_UNAVAILABLE);
+            } else if (response.status === "connected") {
+              toast.error(ACCOUNT_UNAVAILABLE);
             } else {
-              toast.info("Facebook login cancelled");
+              toast.info("Facebook login was cancelled.");
             }
             return;
           }
@@ -204,7 +235,7 @@ export function FacebookSignInButton({
   return (
     <button
       type="button"
-      className="btn btn-facebook"
+      className="btn btn-facebook cursor-pointer"
       onClick={onClick}
       disabled={busy || (Boolean(appId) && !ready && !mobile)}
       title={!appId ? "Facebook App ID missing in env" : undefined}

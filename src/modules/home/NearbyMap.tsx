@@ -443,7 +443,7 @@ export function NearbyMap({
                 <button
                   type="button"
                   onClick={stopFollowing}
-                  className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
+                  className="cmts-press cursor-pointer rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold hover:cursor-pointer"
                 >
                   Stop navigation
                 </button>
@@ -451,7 +451,7 @@ export function NearbyMap({
                 <button
                   type="button"
                   onClick={startFollowing}
-                  className="cmts-press rounded-xl bg-forest px-3 py-2 text-xs font-semibold text-paper"
+                  className="cmts-press cursor-pointer rounded-xl bg-forest px-3 py-2 text-xs font-semibold text-paper hover:cursor-pointer"
                 >
                   Start navigation
                 </button>

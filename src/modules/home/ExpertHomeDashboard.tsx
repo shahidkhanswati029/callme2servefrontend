@@ -400,7 +400,7 @@ function HomeInner() {
                 <div className="flex flex-wrap justify-end gap-1">
                   <button
                     type="button"
-                    className="cmts-press rounded-lg border border-line bg-paper px-3 py-1 text-xs font-semibold text-forest"
+                    className="cmts-press cursor-pointer rounded-lg border border-line bg-paper px-3 py-1 text-xs font-semibold text-forest hover:cursor-pointer hover:border-forest"
                     onClick={() => {
                       setFocusExpertId(n.id);
                       try {
@@ -416,13 +416,13 @@ function HomeInner() {
                   </button>
                   <Link
                     href={`/inbox/${n.id}`}
-                    className="cmts-press rounded-lg bg-forest px-3 py-1 text-xs font-semibold text-paper"
+                    className="cmts-press cursor-pointer rounded-lg bg-forest px-3 py-1 text-xs font-semibold text-paper hover:cursor-pointer"
                   >
                     {t(lang, "message")}
                   </Link>
                   <Link
                     href={`/jobs?worker=${n.id}`}
-                    className="rounded-lg border border-line bg-cream px-3 py-1 text-xs font-semibold text-forest"
+                    className="cursor-pointer rounded-lg border border-line bg-cream px-3 py-1 text-xs font-semibold text-forest hover:cursor-pointer hover:border-forest"
                   >
                     {t(lang, "askJob")}
                   </Link>

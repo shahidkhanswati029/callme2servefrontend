@@ -215,6 +215,34 @@ body {
   animation: glow-brass 2.4s ease-in-out infinite;
 }
 
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(12px, -10px, 0);
+  }
+}
+
+@keyframes soft-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-drift {
+  animation: drift 9s ease-in-out infinite;
+}
+
+.animate-bob {
+  animation: soft-bob 3.2s ease-in-out infinite;
+}
+
 .skeleton {
   @apply rounded-lg;
   background: linear-gradient(90deg, var(--line) 0%, var(--cream) 45%, var(--line) 100%);
@@ -341,6 +369,8 @@ body {
   .animate-float,
   .animate-pulse-dot,
   .animate-glow,
+  .animate-drift,
+  .animate-bob,
   .skeleton {
     animation: none !important;
   }
@@ -477,7 +507,14 @@ html[data-theme="dark"] .btn-primary {
   @apply m-0 font-semibold;
 }
 .oauth-overlay {
-  @apply absolute inset-0 overflow-hidden opacity-[0.011];
+  @apply absolute inset-0 z-10 cursor-pointer overflow-hidden opacity-[0.02];
+}
+.oauth-overlay > div,
+.oauth-overlay iframe {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
 }
 .bio-hero {
   @apply mb-4 grid place-items-center;

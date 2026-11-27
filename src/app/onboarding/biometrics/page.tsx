@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   browserSupportsWebAuthn,
   startRegistration,
@@ -15,6 +15,10 @@ import { setAccount } from "@/store/slices/sessionSlice";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { ButtonLoader } from "@/shared/ui/Loader";
 import { getAccessToken } from "@/lib/token";
+import {
+  platformAuthenticatorAvailable,
+  rememberLocalWebAuthnCredId,
+} from "@/modules/identity/webauthnLocal";
 
 export default function BiometricsPage() {
   return (
@@ -30,14 +34,15 @@ function BioInner() {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState<"fingerprint" | "face" | null>(null);
-  const sensorAvailable = useMemo(
-    () => (typeof window !== "undefined" ? browserSupportsWebAuthn() : true),
-    [],
-  );
+  const [sensorAvailable, setSensorAvailable] = useState(true);
 
   useEffect(() => {
     if (!getAccessToken()) router.replace("/");
   }, [router]);
+
+  useEffect(() => {
+    void platformAuthenticatorAvailable().then(setSensorAvailable);
+  }, []);
 
   function continueWithout() {
     toast.info("Continuing without fingerprint or face on this device");
@@ -56,6 +61,7 @@ function BioInner() {
       const attestation = await startRegistration({
         optionsJSON: optRes.data.options as never,
       });
+      if (attestation?.id) rememberLocalWebAuthnCredId(attestation.id);
       const res = await identityApi.webauthnRegisterVerify(token, attestation, deviceHint);
       dispatch(setAccount(res.data.account));
       toast.success(res.message || "Device enrolled");

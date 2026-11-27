@@ -157,12 +157,13 @@ export const identityApi = {
     });
   },
 
-  webauthnLoginOptions() {
+  webauthnLoginOptions(credentialIds: string[] = []) {
     return request<{
       success: boolean;
       data: { options: Record<string, unknown> };
     }>("/api/identity/webauthn/login/options", {
       method: "POST",
+      body: JSON.stringify({ credentialIds }),
     });
   },
 

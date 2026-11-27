@@ -16,6 +16,11 @@ import { FacebookSignInButton } from "./FacebookSignInButton";
 import { LaptopChrome } from "./LaptopChrome";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { ButtonLoader } from "@/shared/ui/Loader";
+import {
+  platformAuthenticatorAvailable,
+  readLocalWebAuthnCredIds,
+  rememberLocalWebAuthnCredId,
+} from "../webauthnLocal";
 
 export function ExpertLoginForm() {
   const dispatch = useAppDispatch();
@@ -25,7 +30,7 @@ export function ExpertLoginForm() {
   const [sensorOk, setSensorOk] = useState(true);
 
   useEffect(() => {
-    setSensorOk(browserSupportsWebAuthn());
+    void platformAuthenticatorAvailable().then(setSensorOk);
   }, []);
 
   async function signInWithBiometrics() {
@@ -35,10 +40,12 @@ export function ExpertLoginForm() {
     }
     setBusy(true);
     try {
-      const optRes = await identityApi.webauthnLoginOptions();
+      const localCreds = readLocalWebAuthnCredIds();
+      const optRes = await identityApi.webauthnLoginOptions(localCreds);
       const assertion = await startAuthentication({
         optionsJSON: optRes.data.options as never,
       });
+      if (assertion?.id) rememberLocalWebAuthnCredId(assertion.id);
       const res = await identityApi.webauthnLoginVerify(assertion);
       if (!res.data) throw new Error("Biometric sign-in failed");
       dispatch(
@@ -51,11 +58,18 @@ export function ExpertLoginForm() {
       toast.success(res.message || "Fingerprint matched");
       router.replace("/home");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Fingerprint / face did not match. Use Google or Facebook.",
-      );
+      const msg = err instanceof Error ? err.message : "";
+      if (/not.?allowed|abort|cancel/i.test(msg)) {
+        toast.info("Fingerprint / face cancelled. You can try again or use Google / Facebook.");
+      } else if (/unknown|no enrolled|WEBAUTHN_UNKNOWN/i.test(msg)) {
+        toast.error(
+          "No fingerprint enrolled on this phone yet. Sign in with Google or Facebook once, then enroll fingerprint on this device.",
+        );
+      } else {
+        toast.error(
+          msg || "Fingerprint / face did not match. Use Google or Facebook.",
+        );
+      }
     } finally {
       setBusy(false);
     }

@@ -23,7 +23,13 @@ declare global {
         }) => void,
         opts: { scope: string; return_scopes?: boolean },
       ) => void;
-      getLoginStatus?: (cb: (response: { status: string }) => void) => void;
+      getLoginStatus: (
+        cb: (response: {
+          status: string;
+          authResponse?: { accessToken: string };
+        }) => void,
+        fresh?: boolean,
+      ) => void;
     };
     fbAsyncInit?: () => void;
   }
@@ -47,6 +53,8 @@ const ACCOUNT_UNAVAILABLE =
   "Facebook sign-in is unavailable for this account right now. " +
   "If the app is in Development mode, add this Facebook user under Roles → Testers, " +
   "or switch the app to Live, then try again.";
+
+const FB_SCOPE = "public_profile,email";
 
 function isMobileBrowser() {
   if (typeof navigator === "undefined") return false;
@@ -72,6 +80,11 @@ function readOAuthError() {
   const desc = params.get("error_description") || params.get("error_message");
   if (!err && !desc) return null;
   return { err: err || "", desc: desc || "" };
+}
+
+function clearOAuthFragment() {
+  if (typeof window === "undefined") return;
+  window.history.replaceState({}, "", window.location.pathname + window.location.search);
 }
 
 export function FacebookSignInButton({
@@ -128,7 +141,7 @@ export function FacebookSignInButton({
   useEffect(() => {
     const oauthErr = readOAuthError();
     if (oauthErr) {
-      window.history.replaceState({}, "", window.location.pathname + window.location.search.replace(/\?.*$/, ""));
+      clearOAuthFragment();
       const text = `${oauthErr.err} ${oauthErr.desc}`.toLowerCase();
       if (/access_denied|unavailable|not.?available|user.?denied|temporarily/i.test(text)) {
         toast.error(ACCOUNT_UNAVAILABLE);
@@ -139,7 +152,7 @@ export function FacebookSignInButton({
     }
     const tokenFromRedirect = readHashAccessToken();
     if (tokenFromRedirect) {
-      window.history.replaceState({}, "", window.location.pathname + window.location.search);
+      clearOAuthFragment();
       void finishWithToken(tokenFromRedirect);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,6 +186,7 @@ export function FacebookSignInButton({
     script.src = "https://connect.facebook.net/en_US/sdk.js";
     script.async = true;
     script.defer = true;
+    script.crossOrigin = "anonymous";
     script.onerror = () => {
       toast.error("Could not load Facebook SDK. Check network / ad blockers.");
     };
@@ -182,33 +196,20 @@ export function FacebookSignInButton({
   function startMobileRedirect() {
     if (!appId) return;
     const redirectUri = `${window.location.origin}/login`;
+    // Do NOT use auth_type=rerequest — that forces Facebook email/password again.
+    // Returning users with an active Facebook session continue automatically.
     const url =
       `https://www.facebook.com/v21.0/dialog/oauth` +
       `?client_id=${encodeURIComponent(appId)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=${encodeURIComponent("email,public_profile")}` +
+      `&scope=${encodeURIComponent(FB_SCOPE)}` +
       `&response_type=token` +
-      `&auth_type=rerequest`;
+      `&display=touch`;
     window.location.assign(url);
   }
 
-  function onClick() {
-    if (!appId) {
-      toast.error("Set NEXT_PUBLIC_FACEBOOK_APP_ID in your host env (Vercel/Railway), then rebuild.");
-      return;
-    }
-
-    // Mobile browsers often block the FB popup — use full-page OAuth instead.
-    if (isMobileBrowser()) {
-      setBusy(true);
-      startMobileRedirect();
-      return;
-    }
-
-    if (!window.FB || !ready) {
-      toast.info("Facebook SDK still loading — try again in a second.");
-      return;
-    }
+  function runFbLoginPopup() {
+    if (!window.FB) return;
     setBusy(true);
     window.FB.login(
       async (response) => {
@@ -228,8 +229,44 @@ export function FacebookSignInButton({
           setBusy(false);
         }
       },
-      { scope: "email,public_profile", return_scopes: true },
+      { scope: FB_SCOPE, return_scopes: true },
     );
+  }
+
+  function onClick() {
+    if (!appId) {
+      toast.error("Set NEXT_PUBLIC_FACEBOOK_APP_ID in your host env (Vercel/Railway), then rebuild.");
+      return;
+    }
+
+    // Prefer an existing Facebook session (same account, no password prompt).
+    if (window.FB && ready) {
+      setBusy(true);
+      window.FB.getLoginStatus((statusRes) => {
+        if (statusRes.status === "connected" && statusRes.authResponse?.accessToken) {
+          void finishWithToken(statusRes.authResponse.accessToken).finally(() =>
+            setBusy(false),
+          );
+          return;
+        }
+        // Mobile popups are unreliable — fall back to full-page OAuth (no rerequest).
+        if (isMobileBrowser()) {
+          startMobileRedirect();
+          return;
+        }
+        setBusy(false);
+        runFbLoginPopup();
+      });
+      return;
+    }
+
+    if (isMobileBrowser()) {
+      setBusy(true);
+      startMobileRedirect();
+      return;
+    }
+
+    toast.info("Facebook SDK still loading — try again in a second.");
   }
 
   return (

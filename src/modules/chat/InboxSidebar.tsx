@@ -67,6 +67,8 @@ export function InboxSidebar({
               <Link
                 key={c.id}
                 href={`/inbox/${c.other.id}`}
+                scroll={false}
+                prefetch={true}
                 className={`flex items-center gap-3 border-b border-line/70 px-3 py-3 transition-colors ${
                   active ? "bg-mint" : "bg-transparent hover:bg-paper"
                 }`}

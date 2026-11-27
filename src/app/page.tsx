@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GuestOnly } from "@/modules/identity/components/AuthGuard";
 import { MarketingShell } from "@/modules/marketing/MarketingShell";
+import { CityCover } from "@/modules/marketing/CityCover";
 import { marketingApi, type PublicExpert } from "@/modules/marketing/api";
 import { useAppSelector } from "@/store/hooks";
 import { canonicalizeCity, mergeCitiesByCanonical, t, tDynamic, tExpertCard } from "@/shared/i18n";
@@ -31,27 +32,6 @@ const FALLBACK_CATS = [
   "Factory",
   "Other",
 ];
-
-const CITY_GRADIENTS = [
-  "from-[#1b3c33] to-[#2d6b58]",
-  "from-[#8c5a0c] to-[#e09a2b]",
-  "from-[#1f7a62] to-[#1b3c33]",
-  "from-[#14332b] to-[#4a5c54]",
-  "from-[#5b4db8] to-[#1b3c33]",
-  "from-[#c45c6a] to-[#8c5a0c]",
-];
-
-function cityArt(city: string, index: number) {
-  const known: Record<string, string> = {
-    Sialkot: CITY_GRADIENTS[0],
-    Lahore: CITY_GRADIENTS[1],
-    Islamabad: CITY_GRADIENTS[2],
-    Karachi: CITY_GRADIENTS[3],
-    Dubai: CITY_GRADIENTS[4],
-    London: CITY_GRADIENTS[5],
-  };
-  return known[canonicalizeCity(city) || city] || CITY_GRADIENTS[index % CITY_GRADIENTS.length];
-}
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -466,16 +446,14 @@ export default function WelcomePage() {
                 return (
                 <Reveal key={cityCanon} delay={i * 90}>
                 <div className="cmts-card overflow-hidden rounded-2xl border border-line bg-cream shadow-sm">
-                  <div
-                    className={`flex h-36 items-end bg-gradient-to-br px-4 py-3 text-paper ${cityArt(
-                      cityCanon,
-                      i,
-                    )}`}
-                  >
-                    <h3 className="font-display text-2xl font-bold">
-                      {tDynamic(language, cityCanon)}
-                    </h3>
-                  </div>
+                  <CityCover
+                    city={cityCanon}
+                    countryCode={countryCode}
+                    title={tDynamic(language, cityCanon)}
+                    index={i}
+                    className="h-36"
+                    titleClassName="font-display text-2xl font-bold"
+                  />
                   <div className="grid grid-cols-2 gap-2 px-4 py-3 text-center text-sm">
                     <div>
                       <p className="font-display text-xl font-bold text-forest">{c.experts}</p>

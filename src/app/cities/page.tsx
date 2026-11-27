@@ -4,18 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MarketingShell } from "@/modules/marketing/MarketingShell";
 import { PageHero } from "@/modules/marketing/PageHero";
+import { CityCover } from "@/modules/marketing/CityCover";
 import { marketingApi } from "@/modules/marketing/api";
 import { Loader } from "@/shared/ui/Loader";
 import { canonicalizeCity, mergeCitiesByCanonical, t, tDynamic } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 import { useAppSelector } from "@/store/hooks";
-
-const GRADIENTS = [
-  "from-[#1b3c33] to-[#2d6b58]",
-  "from-[#8c5a0c] to-[#e09a2b]",
-  "from-[#1f7a62] to-[#14332b]",
-  "from-[#5b4db8] to-[#1b3c33]",
-];
 
 export default function CitiesPage() {
   const lang = useUiLanguage();
@@ -52,13 +46,13 @@ export default function CitiesPage() {
                 key={cityCanon}
                 className="cmts-card overflow-hidden rounded-2xl border border-line bg-cream shadow-sm"
               >
-                <div
-                  className={`flex h-32 items-end bg-gradient-to-br px-4 py-3 text-paper ${
-                    GRADIENTS[i % GRADIENTS.length]
-                  }`}
-                >
-                  <h2 className="font-display text-2xl font-bold">{tDynamic(lang, cityCanon)}</h2>
-                </div>
+                <CityCover
+                  city={cityCanon}
+                  countryCode={countryCode}
+                  title={tDynamic(lang, cityCanon)}
+                  index={i}
+                  className="h-32"
+                />
                 <div className="grid grid-cols-2 gap-2 px-4 py-3 text-center text-sm">
                   <div>
                     <p className="font-display text-xl font-bold text-forest">{c.experts}</p>

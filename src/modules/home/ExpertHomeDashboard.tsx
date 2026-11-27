@@ -11,15 +11,11 @@ import { locationApi, type NearbyExpert } from "@/modules/location/api";
 import { jobsApi } from "@/modules/jobs/api";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
-import {
-  notificationsApi,
-  type AppNotification,
-} from "@/modules/notifications/api";
+import { notificationsApi } from "@/modules/notifications/api";
 import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
 import { t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
-import { useSocket } from "@/modules/chat/useSocket";
-import { formatChatTime } from "@/shared/time";
+import { Reveal } from "@/shared/ui/Reveal";
 
 const NearbyMap = dynamic(
   () => import("./NearbyMap").then((m) => m.NearbyMap),
@@ -85,7 +81,6 @@ function HomeInner() {
   const [focusExpertId, setFocusExpertId] = useState<string | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
   const [unread, setUnread] = useState(0);
-  const [recentNotifs, setRecentNotifs] = useState<AppNotification[]>([]);
   const [jobStats, setJobStats] = useState({
     open: 0,
     booked: 0,
@@ -96,16 +91,6 @@ function HomeInner() {
   });
   const [radiusKm, setRadiusKm] = useState(packageRadiusKm[account.package] || 5);
   const [inquiriesLabel, setInquiriesLabel] = useState("Unlimited");
-
-  const loadRecentNotifs = useCallback(async () => {
-    try {
-      const list = await notificationsApi.list(1, 6);
-      setUnread(list.data.unread || 0);
-      setRecentNotifs(list.data.notifications || []);
-    } catch {
-      // optional on home
-    }
-  }, []);
 
   const loadNearby = useCallback(
     async (searchQ?: string, origin?: Coordinates | null) => {
@@ -202,14 +187,17 @@ function HomeInner() {
   }, []);
 
   useEffect(() => {
-    void loadRecentNotifs();
-  }, [loadRecentNotifs]);
-
-  useSocket({
-    onNotification: () => {
-      void loadRecentNotifs();
-    },
-  });
+    let cancelled = false;
+    void notificationsApi
+      .list(1, 1)
+      .then((list) => {
+        if (!cancelled) setUnread(list.data.unread || 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const accountWithCoords = account as typeof account & {
     latitude?: number | null;
@@ -218,7 +206,7 @@ function HomeInner() {
 
   return (
     <AppShell>
-      <header className="mb-4">
+      <header className="animate-rise mb-4">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
           {(account.city || displayCountry || t(lang, "city")).toUpperCase()} · {t(lang, "today")}
         </p>
@@ -256,110 +244,60 @@ function HomeInner() {
         </div>
       </header>
 
-      {/* Mobile: notifications first on dashboard home */}
-      <section className="mb-4 lg:hidden">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-display text-lg font-bold">{t(lang, "notifications")}</h3>
-          <Link href="/notifications" className="text-xs font-semibold text-forest underline">
-            {t(lang, "exploreAll")}
-          </Link>
-        </div>
-        {recentNotifs.length === 0 ? (
-          <p className="mt-2 rounded-2xl border border-line bg-cream px-3 py-3 text-sm text-muted">
-            {t(lang, "allCaughtUp")}
-          </p>
-        ) : (
-          <div className="mt-2 overflow-hidden rounded-2xl border border-line bg-cream">
-            {recentNotifs.map((n) => {
-              const data = (n.data || {}) as {
-                quotationId?: string;
-                jobId?: string;
-                otherId?: string;
-                conversationId?: string;
-              };
-              const href = data.quotationId
-                ? `/quotations/${data.quotationId}`
-                : data.jobId
-                  ? "/jobs"
-                  : data.otherId
-                    ? `/inbox/${data.otherId}`
-                    : data.conversationId
-                      ? "/inbox"
-                      : "/notifications";
-              return (
-                <Link
-                  key={n.id}
-                  href={href}
-                  className={`flex items-start justify-between gap-2 border-b border-line/70 px-3 py-2.5 last:border-b-0 ${
-                    n.readAt ? "bg-cream" : "bg-mint/50"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">
-                      {n.actor?.name || tDynamic(lang, n.title) || n.title}
-                    </p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted">
-                      {n.kind === "CHAT" ? n.body : tDynamic(lang, n.body) || n.body}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[0.65rem] text-muted">
-                    {formatChatTime(n.createdAt)}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <ProfileCompletionBar account={account} />
+      <Reveal>
+        <ProfileCompletionBar account={account} />
+      </Reveal>
 
       <section className="mb-4 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-line bg-cream p-4">
-          <h3 className="font-display text-lg font-bold">{t(lang, "yourJobs")}</h3>
-          <div className="mt-3">
-            <BarChart
-              height={140}
-              points={[
-                { label: t(lang, "statusOpen"), value: jobStats.open },
-                { label: t(lang, "statusBooked"), value: jobStats.booked },
-                { label: t(lang, "statusAccepted"), value: jobStats.accepted },
-                { label: t(lang, "statusCompleted"), value: jobStats.completed },
-                { label: t(lang, "statusCancelled"), value: jobStats.cancelled },
-              ]}
-            />
+        <Reveal delay={40}>
+          <div className="cmts-card rounded-2xl border border-line bg-cream p-4">
+            <h3 className="font-display text-lg font-bold">{t(lang, "yourJobs")}</h3>
+            <div className="mt-3">
+              <BarChart
+                height={140}
+                points={[
+                  { label: t(lang, "statusOpen"), value: jobStats.open },
+                  { label: t(lang, "statusBooked"), value: jobStats.booked },
+                  { label: t(lang, "statusAccepted"), value: jobStats.accepted },
+                  { label: t(lang, "statusCompleted"), value: jobStats.completed },
+                  { label: t(lang, "statusCancelled"), value: jobStats.cancelled },
+                ]}
+              />
+            </div>
           </div>
-        </div>
-        <div className="rounded-2xl border border-line bg-cream p-4">
-          <h3 className="font-display text-lg font-bold">{t(lang, "activityMix")}</h3>
-          <div className="mt-3">
-            <DonutChart
-              size={140}
-              centerLabel={`${jobStats.earned || 0}`}
-              slices={[
-                { label: t(lang, "statusOpen"), value: jobStats.open || 0, color: "var(--brass)" },
-                {
-                  label: t(lang, "statusAccepted"),
-                  value: jobStats.accepted || 0,
-                  color: "var(--forest)",
-                },
-                {
-                  label: t(lang, "statusCompleted"),
-                  value: jobStats.completed || 0,
-                  color: "var(--success)",
-                },
-                {
-                  label: t(lang, "statusCancelled"),
-                  value: jobStats.cancelled || 0,
-                  color: "var(--line)",
-                },
-              ]}
-            />
+        </Reveal>
+        <Reveal delay={90} variant="scale">
+          <div className="cmts-card rounded-2xl border border-line bg-cream p-4">
+            <h3 className="font-display text-lg font-bold">{t(lang, "activityMix")}</h3>
+            <div className="mt-3">
+              <DonutChart
+                size={140}
+                centerLabel={`${jobStats.earned || 0}`}
+                slices={[
+                  { label: t(lang, "statusOpen"), value: jobStats.open || 0, color: "var(--brass)" },
+                  {
+                    label: t(lang, "statusAccepted"),
+                    value: jobStats.accepted || 0,
+                    color: "var(--forest)",
+                  },
+                  {
+                    label: t(lang, "statusCompleted"),
+                    value: jobStats.completed || 0,
+                    color: "var(--success)",
+                  },
+                  {
+                    label: t(lang, "statusCancelled"),
+                    value: jobStats.cancelled || 0,
+                    color: "var(--line)",
+                  },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted">
+              {t(lang, "earnings")}: {displayCurrency} {jobStats.earned.toLocaleString()}
+            </p>
           </div>
-          <p className="mt-2 text-xs text-muted">
-            {t(lang, "earnings")}: {displayCurrency} {jobStats.earned.toLocaleString()}
-          </p>
-        </div>
+        </Reveal>
       </section>
 
       <section className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -414,32 +352,38 @@ function HomeInner() {
       </section>
 
       <section className="mb-4 grid gap-2 sm:grid-cols-3">
-        <Link href="/settings/place" className="rounded-xl border border-line bg-cream p-3">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            {t(lang, "place")}
-          </p>
-          <strong className="mt-1 block text-sm">
-            {account.placeLabel || account.city || t(lang, "setYourPin")}
-          </strong>
-        </Link>
-        <div className="rounded-xl border border-line bg-cream p-3">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            {t(lang, "currencyLabel")}
-          </p>
-          <strong className="mt-1 block text-sm">
-            {displayCountry} · {displayCurrency}
-          </strong>
-        </div>
-        <Link href="/shops" className="rounded-xl border border-line bg-cream p-3">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-            {t(lang, "shop")}
-          </p>
-          <strong className="mt-1 block text-sm">{t(lang, "openOrManageShop")}</strong>
-        </Link>
+        <Reveal delay={30}>
+          <Link href="/settings/place" className="cmts-card block rounded-xl border border-line bg-cream p-3">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
+              {t(lang, "place")}
+            </p>
+            <strong className="mt-1 block text-sm">
+              {account.placeLabel || account.city || t(lang, "setYourPin")}
+            </strong>
+          </Link>
+        </Reveal>
+        <Reveal delay={70}>
+          <div className="cmts-card rounded-xl border border-line bg-cream p-3">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
+              {t(lang, "currencyLabel")}
+            </p>
+            <strong className="mt-1 block text-sm">
+              {displayCountry} · {displayCurrency}
+            </strong>
+          </div>
+        </Reveal>
+        <Reveal delay={110}>
+          <Link href="/shops" className="cmts-card block rounded-xl border border-line bg-cream p-3">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
+              {t(lang, "shop")}
+            </p>
+            <strong className="mt-1 block text-sm">{t(lang, "openOrManageShop")}</strong>
+          </Link>
+        </Reveal>
       </section>
 
       <section className="grid gap-2">
-        <h3 className="font-display text-xl font-bold">{t(lang, "nearbyExperts")}</h3>
+        <h3 className="animate-rise font-display text-xl font-bold">{t(lang, "nearbyExperts")}</h3>
         {loadingNearby ? (
           <Loader label={t(lang, "findingExperts")} />
         ) : experts.length === 0 ? (
@@ -447,12 +391,12 @@ function HomeInner() {
             {t(lang, "noExpertsInRadius")}
           </p>
         ) : (
-          experts.map((n) => {
+          experts.map((n, i) => {
             const top =
               Number(n.rating || 0) >= 4.5 && Number((n as { ratingCount?: number }).ratingCount || 0) >= 3;
             return (
+            <Reveal key={n.id} delay={Math.min(i * 45, 240)}>
             <div
-              key={n.id}
               className={`cmts-card flex items-center justify-between gap-3 rounded-xl border bg-cream px-4 py-3 ${
                 top ? "border-brass shadow-[0_6px_18px_rgba(224,154,43,0.18)]" : "border-line"
               }`}
@@ -510,6 +454,7 @@ function HomeInner() {
                 </div>
               </div>
             </div>
+            </Reveal>
             );
           })
         )}

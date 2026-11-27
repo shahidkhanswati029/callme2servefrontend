@@ -324,7 +324,7 @@ function ThreadInner() {
 
   return (
     <AppShell fullBleed>
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-paper">
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-paper lg:flex-row">
         <div className="hidden h-full min-h-0 w-[300px] max-w-[38%] shrink-0 lg:flex">
           <InboxSidebar rows={inboxRows} activeOtherId={otherId} />
         </div>

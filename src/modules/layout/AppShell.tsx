@@ -105,12 +105,14 @@ export function AppShell({
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileMenuOpen && !fullBleed) return;
+    // Only lock document scroll on small screens (mobile chat / drawer).
+    // Desktop chat must keep normal layout behavior.
+    const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
+    if (!mobileMenuOpen && !(fullBleed && mobile)) return;
     const html = document.documentElement;
     const body = document.body;
     const prevHtml = html.style.overflow;
     const prevBody = body.style.overflow;
-    // Lock document scroll so chat / drawer don't fight the page on mobile.
     html.style.overflow = "hidden";
     body.style.overflow = "hidden";
     return () => {

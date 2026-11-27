@@ -154,6 +154,21 @@ body {
   }
 }
 
+@keyframes drawer-left {
+  from {
+    opacity: 0.85;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-drawer-left {
+  animation: drawer-left 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @keyframes page-in {
   from {
     opacity: 0;
@@ -366,6 +381,7 @@ body {
   .animate-scale,
   .animate-page,
   .animate-drawer,
+  .animate-drawer-left,
   .animate-float,
   .animate-pulse-dot,
   .animate-glow,

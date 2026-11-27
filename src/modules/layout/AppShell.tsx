@@ -81,11 +81,11 @@ export function AppShell({
   const dispatch = useAppDispatch();
   const router = useRouter();
   const toast = useToast();
-  // Redux language changer is source of truth (not stale account.uiLanguage).
   const lang = (isUiLanguage(uiLang) ? uiLang : "en") as UiLanguage;
   const isDesk = account?.seat === "DESK";
   const [unread, setUnread] = useState(0);
   const [now, setNow] = useState(() => new Date());
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const countries = useMemo(() => listCountries(), []);
   const languageOptions = useMemo(() => getUiLanguageOptions(lang), [lang]);
   const currencies = useMemo(() => {
@@ -93,10 +93,25 @@ export function AppShell({
     return Array.from(set).sort();
   }, [countries]);
 
+  const navLinks = isDesk ? deskHrefs : expertHrefs;
+
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     if (!account || isDesk) return;
@@ -115,7 +130,6 @@ export function AppShell({
   useSocket({
     onNotification: (payload) => {
       const n = payload as { title?: string; body?: string };
-      // Live badge — also re-sync from API so count stays accurate.
       setUnread((u) => u + 1);
       void notificationsApi
         .list(1, 1)
@@ -127,21 +141,19 @@ export function AppShell({
     },
   });
 
-  const mobileLinks = isDesk
+  /** Mobile bottom bar: notifications up front; full app lives in hamburger. */
+  const mobileQuickLinks = isDesk
     ? [
         { href: "/desk", label: t(lang, "board") },
         { href: "/desk/activity", label: t(lang, "live") },
         { href: "/desk/contacts", label: t(lang, "contact") },
         { href: "/desk/money", label: t(lang, "money") },
-        { href: "/account", label: t(lang, "me") },
       ]
     : [
         { href: "/home", label: t(lang, "home") },
-        { href: "/inbox", label: t(lang, "message") },
         { href: "/notifications", label: t(lang, "notifications") },
-        { href: "/jobs", label: t(lang, "jobs") },
-        { href: "/shops", label: t(lang, "shops") },
-        { href: "/account", label: t(lang, "me") },
+        { href: "/inbox", label: t(lang, "message") },
+        { href: "/quotations", label: t(lang, "quotations") },
       ];
 
   const gridCols =
@@ -151,10 +163,62 @@ export function AppShell({
         ? "lg:grid-cols-[240px_1fr]"
         : "lg:grid-cols-[0px_1fr]";
 
+  function goBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.replace(isDesk ? "/desk" : fullBleed ? "/inbox" : "/home");
+    }
+  }
+
+  async function handleSignOut() {
+    await dispatch(signOut());
+    toast.info(t(lang, "signedOut"));
+    router.push("/");
+  }
+
+  function NavItems({
+    onNavigate,
+    compact,
+  }: {
+    onNavigate?: () => void;
+    compact?: boolean;
+  }) {
+    return (
+      <>
+        {navLinks.map((l) => {
+          const active = isActive(pathname, l.href);
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={onNavigate}
+              className={`cmts-sidebar-link relative truncate rounded-xl px-3 py-2.5 font-semibold transition-colors ${
+                compact ? "text-sm" : ""
+              } ${
+                active
+                  ? "bg-[#14332b] text-paper"
+                  : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
+              }`}
+            >
+              {t(lang, l.key)}
+              {l.key === "notifications" && unread > 0 ? (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
     <div
       className={`grid min-h-[100dvh] bg-paper lg:h-[100dvh] lg:overflow-hidden ${gridCols}`}
     >
+      {/* Desktop sidebar */}
       <aside
         className={`hidden min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-[var(--sidebar)] text-paper transition-all lg:flex ${
           sidebarOpen
@@ -185,55 +249,14 @@ export function AppShell({
         </div>
 
         <nav className="mt-8 grid flex-1 content-start gap-2">
-          {isDesk
-            ? deskHrefs.map((l) => {
-                const active = isActive(pathname, l.href);
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={`cmts-sidebar-link truncate rounded-xl px-3 py-2.5 font-semibold transition-colors ${
-                      active
-                        ? "bg-[#14332b] text-paper"
-                        : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
-                    }`}
-                  >
-                    {t(lang, l.key)}
-                  </Link>
-                );
-              })
-            : expertHrefs.map((l) => {
-                const active = isActive(pathname, l.href);
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={`cmts-sidebar-link relative truncate rounded-xl px-3 py-2.5 font-semibold transition-colors ${
-                      active
-                        ? "bg-[#14332b] text-paper"
-                        : "text-[var(--sidebar-text)] hover:bg-[#14332b]/60"
-                    }`}
-                  >
-                    {t(lang, l.key)}
-                    {l.key === "notifications" && unread > 0 ? (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
-                        {unread > 99 ? "99+" : unread}
-                      </span>
-                    ) : null}
-                  </Link>
-                );
-              })}
+          <NavItems />
         </nav>
 
         <button
           type="button"
           disabled={authBusy}
           className="mt-auto rounded-xl border border-white/20 px-3 py-2.5 text-left text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
-          onClick={async () => {
-            await dispatch(signOut());
-            toast.info(t(lang, "signedOut"));
-            router.push("/");
-          }}
+          onClick={() => void handleSignOut()}
         >
           {authBusy ? (
             <span className="inline-flex items-center gap-2">
@@ -244,6 +267,52 @@ export function AppShell({
           )}
         </button>
       </aside>
+
+      {/* Mobile left hamburger drawer — full feature set */}
+      {mobileMenuOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="absolute inset-0 bg-ink/45"
+            aria-label={t(lang, "hideMenu")}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="animate-drawer-left absolute inset-y-0 left-0 flex w-[min(86vw,300px)] flex-col bg-[var(--sidebar)] p-5 text-paper shadow-2xl">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass">
+                  {isDesk ? t(lang, "desk") : t(lang, "brandName")}
+                </p>
+                <p className="mt-1 text-sm text-[var(--sidebar-text)]">{account?.name}</p>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-white/20 px-2.5 py-1 text-xs font-semibold"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <nav className="mt-6 grid flex-1 content-start gap-1.5 overflow-y-auto">
+              <NavItems onNavigate={() => setMobileMenuOpen(false)} compact />
+            </nav>
+            <button
+              type="button"
+              disabled={authBusy}
+              className="mt-4 rounded-xl border border-white/20 px-3 py-2.5 text-left text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
+              onClick={() => void handleSignOut()}
+            >
+              {authBusy ? (
+                <span className="inline-flex items-center gap-2">
+                  <ButtonLoader /> …
+                </span>
+              ) : (
+                t(lang, "signOut")
+              )}
+            </button>
+          </aside>
+        </div>
+      ) : null}
 
       <div
         className={
@@ -256,6 +325,14 @@ export function AppShell({
           <div className="flex shrink-0 items-center gap-2 border-b border-line bg-cream px-3 py-2 lg:px-4">
             <button
               type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="inline-flex rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold lg:hidden"
+              aria-label={t(lang, "showMenu")}
+            >
+              ☰
+            </button>
+            <button
+              type="button"
               onClick={() => dispatch(toggleSidebar())}
               className="hidden rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold lg:inline-flex"
               aria-label={sidebarOpen ? t(lang, "hideMenu") : t(lang, "showMenu")}
@@ -264,19 +341,20 @@ export function AppShell({
             </button>
             <button
               type="button"
-              onClick={() => {
-                // Normal in-app back; SignedInRouteGuard blocks auth pages if hit.
-                if (typeof window !== "undefined" && window.history.length > 1) {
-                  router.back();
-                } else {
-                  router.replace(isDesk ? "/desk" : "/inbox");
-                }
-              }}
+              onClick={goBack}
               className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold"
             >
               ← {t(lang, "back")}
             </button>
             {title ? <span className="truncate text-sm font-semibold">{title}</span> : null}
+            {!isDesk && unread > 0 ? (
+              <Link
+                href="/notifications"
+                className="ml-auto rounded-full bg-brass px-2 py-0.5 text-[0.65rem] font-bold text-forest lg:hidden"
+              >
+                {unread > 99 ? "99+" : unread}
+              </Link>
+            ) : null}
           </div>
         ) : null}
         {!fullBleed ? (
@@ -284,14 +362,15 @@ export function AppShell({
             <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  // Normal in-app back; SignedInRouteGuard blocks auth pages if hit.
-                  if (typeof window !== "undefined" && window.history.length > 1) {
-                    router.back();
-                  } else {
-                    router.replace(isDesk ? "/desk" : "/home");
-                  }
-                }}
+                onClick={() => setMobileMenuOpen(true)}
+                className="inline-flex rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold lg:hidden"
+                aria-label={t(lang, "showMenu")}
+              >
+                ☰ {t(lang, "showMenu")}
+              </button>
+              <button
+                type="button"
+                onClick={goBack}
                 className="rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold"
                 aria-label={t(lang, "back")}
               >
@@ -310,7 +389,20 @@ export function AppShell({
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <time className="rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold text-muted">
+              {!isDesk ? (
+                <Link
+                  href="/notifications"
+                  className="relative rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold lg:hidden"
+                >
+                  {t(lang, "notifications")}
+                  {unread > 0 ? (
+                    <span className="ml-1 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null}
+              <time className="hidden rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold text-muted sm:inline-block">
                 {now.toLocaleString(localeFor(lang), {
                   weekday: "short",
                   day: "numeric",
@@ -389,12 +481,13 @@ export function AppShell({
         </div>
       </div>
 
+      {/* Mobile bottom bar — notifications second (front after home); More opens full menu */}
       <nav
         className={`fixed inset-x-0 bottom-0 z-40 grid border-t border-line bg-cream/95 py-2 backdrop-blur lg:hidden ${
-          isDesk ? "grid-cols-5" : "grid-cols-6"
+          isDesk ? "grid-cols-5" : "grid-cols-5"
         }`}
       >
-        {mobileLinks.map((l) => {
+        {mobileQuickLinks.map((l) => {
           const active = isActive(pathname, l.href);
           return (
             <Link
@@ -411,6 +504,14 @@ export function AppShell({
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="cmts-press px-1 text-center text-[0.65rem] font-semibold text-muted"
+          aria-label={t(lang, "showMenu")}
+        >
+          ☰ {t(lang, "showMenu")}
+        </button>
       </nav>
     </div>
   );

@@ -11,10 +11,15 @@ import { locationApi, type NearbyExpert } from "@/modules/location/api";
 import { jobsApi } from "@/modules/jobs/api";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
-import { notificationsApi } from "@/modules/notifications/api";
+import {
+  notificationsApi,
+  type AppNotification,
+} from "@/modules/notifications/api";
 import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
 import { t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
+import { useSocket } from "@/modules/chat/useSocket";
+import { formatChatTime } from "@/shared/time";
 
 const NearbyMap = dynamic(
   () => import("./NearbyMap").then((m) => m.NearbyMap),
@@ -80,6 +85,7 @@ function HomeInner() {
   const [focusExpertId, setFocusExpertId] = useState<string | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
   const [unread, setUnread] = useState(0);
+  const [recentNotifs, setRecentNotifs] = useState<AppNotification[]>([]);
   const [jobStats, setJobStats] = useState({
     open: 0,
     booked: 0,
@@ -90,6 +96,16 @@ function HomeInner() {
   });
   const [radiusKm, setRadiusKm] = useState(packageRadiusKm[account.package] || 5);
   const [inquiriesLabel, setInquiriesLabel] = useState("Unlimited");
+
+  const loadRecentNotifs = useCallback(async () => {
+    try {
+      const list = await notificationsApi.list(1, 6);
+      setUnread(list.data.unread || 0);
+      setRecentNotifs(list.data.notifications || []);
+    } catch {
+      // optional on home
+    }
+  }, []);
 
   const loadNearby = useCallback(
     async (searchQ?: string, origin?: Coordinates | null) => {
@@ -186,17 +202,14 @@ function HomeInner() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void notificationsApi
-      .list(1, 1)
-      .then((list) => {
-        if (!cancelled) setUnread(list.data.unread || 0);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void loadRecentNotifs();
+  }, [loadRecentNotifs]);
+
+  useSocket({
+    onNotification: () => {
+      void loadRecentNotifs();
+    },
+  });
 
   const accountWithCoords = account as typeof account & {
     latitude?: number | null;
@@ -228,8 +241,76 @@ function HomeInner() {
           >
             {t(lang, "portfolio")}
           </Link>
+          <Link
+            href="/refer"
+            className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
+          >
+            {t(lang, "refer")}
+          </Link>
+          <Link
+            href="/earnings"
+            className="cmts-press rounded-xl border border-line bg-paper px-3 py-2 text-xs font-semibold"
+          >
+            {t(lang, "earnings")}
+          </Link>
         </div>
       </header>
+
+      {/* Mobile: notifications first on dashboard home */}
+      <section className="mb-4 lg:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-display text-lg font-bold">{t(lang, "notifications")}</h3>
+          <Link href="/notifications" className="text-xs font-semibold text-forest underline">
+            {t(lang, "exploreAll")}
+          </Link>
+        </div>
+        {recentNotifs.length === 0 ? (
+          <p className="mt-2 rounded-2xl border border-line bg-cream px-3 py-3 text-sm text-muted">
+            {t(lang, "allCaughtUp")}
+          </p>
+        ) : (
+          <div className="mt-2 overflow-hidden rounded-2xl border border-line bg-cream">
+            {recentNotifs.map((n) => {
+              const data = (n.data || {}) as {
+                quotationId?: string;
+                jobId?: string;
+                otherId?: string;
+                conversationId?: string;
+              };
+              const href = data.quotationId
+                ? `/quotations/${data.quotationId}`
+                : data.jobId
+                  ? "/jobs"
+                  : data.otherId
+                    ? `/inbox/${data.otherId}`
+                    : data.conversationId
+                      ? "/inbox"
+                      : "/notifications";
+              return (
+                <Link
+                  key={n.id}
+                  href={href}
+                  className={`flex items-start justify-between gap-2 border-b border-line/70 px-3 py-2.5 last:border-b-0 ${
+                    n.readAt ? "bg-cream" : "bg-mint/50"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">
+                      {n.actor?.name || tDynamic(lang, n.title) || n.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-muted">
+                      {n.kind === "CHAT" ? n.body : tDynamic(lang, n.body) || n.body}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[0.65rem] text-muted">
+                    {formatChatTime(n.createdAt)}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <ProfileCompletionBar account={account} />
 

@@ -95,7 +95,7 @@ function Inner() {
 
   return (
     <AppShell title={data.category}>
-      <div className="mx-auto max-w-3xl space-y-4 p-4">
+      <div className="space-y-4">
         <div className="rounded-2xl border border-line bg-paper p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-lg font-bold text-forest">{tDynamic(lang, data.category)}</h1>

@@ -112,7 +112,7 @@ function Inner() {
 
   return (
     <AppShell title={t(lang, "quotations")}>
-      <div className="mx-auto max-w-3xl space-y-4 p-4">
+      <div className="space-y-4">
         <p className="text-sm text-muted">
           {t(lang, "quotationsLede")} · {t(lang, "inquiries")}:{" "}
           <span className="font-semibold text-forest">{t(lang, "unlimited")}</span>

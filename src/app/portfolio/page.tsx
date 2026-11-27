@@ -129,7 +129,7 @@ function Inner() {
 
   return (
     <AppShell title={t(lang, "portfolio")}>
-      <div className="mx-auto max-w-3xl space-y-6 p-4">
+      <div className="space-y-6">
         <p className="text-sm text-muted">{t(lang, "portfolioLede")}</p>
         <p className="rounded-xl bg-mint px-3 py-2 text-sm font-semibold text-forest">
           {data.readyToBid ? t(lang, "readyToBid") : t(lang, "uploadToBid")}

@@ -77,7 +77,7 @@ function ThreadInner() {
     null,
   );
   const [inboxRows, setInboxRows] = useState<InboxRow[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesPaneRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const conversationIdRef = useRef<string | null>(null);
@@ -110,7 +110,10 @@ function ThreadInner() {
   }, [load]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the messages pane — never the page (mobile jump / rubber-band fix).
+    const pane = messagesPaneRef.current;
+    if (!pane) return;
+    pane.scrollTop = pane.scrollHeight;
   }, [messages]);
 
   useSocket({
@@ -321,11 +324,11 @@ function ThreadInner() {
 
   return (
     <AppShell fullBleed>
-      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden bg-paper">
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-paper">
         <div className="hidden h-full min-h-0 w-[300px] max-w-[38%] shrink-0 lg:flex">
           <InboxSidebar rows={inboxRows} activeOtherId={otherId} />
         </div>
-        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-cream">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-cream">
           {other ? (
             <div className="flex shrink-0 items-center gap-3 border-b border-line bg-cream px-3 py-2.5 sm:px-4 sm:py-3">
               <Link
@@ -365,7 +368,11 @@ function ThreadInner() {
               </div>
             </div>
           ) : null}
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 sm:p-4">
+          <div
+            ref={messagesPaneRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain touch-pan-y p-3 sm:p-4"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             {messages.map((m, idx) => {
               const mine = m.senderId === me?.id;
               const prev = messages[idx - 1];
@@ -443,7 +450,6 @@ function ThreadInner() {
                 </div>
               );
             })}
-            <div ref={bottomRef} />
           </div>
 
           <div className="shrink-0 border-t border-line bg-cream p-3">

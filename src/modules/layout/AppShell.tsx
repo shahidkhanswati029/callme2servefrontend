@@ -105,13 +105,19 @@ export function AppShell({
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!mobileMenuOpen && !fullBleed) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    // Lock document scroll so chat / drawer don't fight the page on mobile.
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, fullBleed]);
 
   useEffect(() => {
     if (!account || isDesk) return;
@@ -216,7 +222,11 @@ export function AppShell({
 
   return (
     <div
-      className={`grid min-h-[100dvh] bg-paper lg:h-[100dvh] lg:overflow-hidden ${gridCols}`}
+      className={`grid bg-paper ${
+        fullBleed
+          ? `h-[100dvh] max-h-[100dvh] overflow-hidden ${gridCols}`
+          : `min-h-[100dvh] lg:h-[100dvh] lg:overflow-hidden ${gridCols}`
+      }`}
     >
       {/* Desktop sidebar */}
       <aside
@@ -317,7 +327,7 @@ export function AppShell({
       <div
         className={
           fullBleed
-            ? "flex h-[100dvh] min-h-0 min-w-0 flex-col overflow-hidden pb-[3.5rem] lg:h-full lg:pb-0"
+            ? "flex h-full min-h-0 min-w-0 flex-col overflow-hidden pb-[3.5rem] lg:pb-0"
             : "mx-auto min-h-0 min-w-0 w-full max-w-[1100px] overflow-y-auto px-4 pb-24 pt-4 lg:px-8 lg:pb-8 lg:pt-5"
         }
       >
@@ -473,7 +483,8 @@ export function AppShell({
           key={pathname}
           className={
             fullBleed
-              ? "animate-page flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+              ? // No page-in transform here — it breaks nested chat scroll on mobile.
+                "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
               : "animate-page"
           }
         >

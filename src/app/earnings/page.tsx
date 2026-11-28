@@ -15,11 +15,13 @@ import { useUiLanguage } from "@/shared/useUiLanguage";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const RAILS = ["JAZZCASH", "EASYPAISA", "GOOGLE_PAY", "PAYPAL", "DEBIT_CARD"] as const;
+const PK_WALLET_RAILS = ["JAZZCASH", "EASYPAISA"] as const;
 
 type Earnings = {
   available: number;
   netEarned: number;
   referralEarned: number;
+  deposited?: number;
   released: number;
   lines: Array<{
     id: string;
@@ -63,6 +65,14 @@ function Inner() {
     packageDurationMonths?: number;
     jobCommissionEnabled?: boolean;
   } | null>(null);
+  const [walletRail, setWalletRail] = useState<(typeof PK_WALLET_RAILS)[number]>("JAZZCASH");
+  const [walletPhone, setWalletPhone] = useState(account.phone || "");
+  const [depositAmount, setDepositAmount] = useState("500");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+
+  const isPkUser =
+    String(account.country || "").toUpperCase() === "PK" ||
+    String(account.currency || "").toUpperCase() === "PKR";
 
   const authHeaders = () => {
     const token = getAccessToken();
@@ -190,7 +200,12 @@ function Inner() {
         method: "POST",
         credentials: "include",
         headers: authHeaders(),
-        body: JSON.stringify({ rail: r }),
+        body: JSON.stringify({
+          rail: r,
+          ...(PK_WALLET_RAILS.includes(r as (typeof PK_WALLET_RAILS)[number]) && walletPhone.trim()
+            ? { walletPhone: walletPhone.trim() }
+            : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok || json.success === false) throw new Error(json.error?.message || "Failed");
@@ -198,6 +213,77 @@ function Inner() {
       toast.success("Payout destination saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runWalletAction(kind: "deposit" | "withdraw", e: FormEvent) {
+    e.preventDefault();
+    if (!isPkUser) {
+      toast.error("JazzCash / EasyPaisa wallet is for Pakistani (PK / PKR) accounts only for now");
+      return;
+    }
+    const raw = kind === "deposit" ? depositAmount : withdrawAmount || String(data?.available || "");
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 100) {
+      toast.error("Minimum amount is PKR 100");
+      return;
+    }
+    if (!walletPhone.trim()) {
+      toast.error("Enter your JazzCash / EasyPaisa mobile number (03XXXXXXXXX)");
+      return;
+    }
+    const ok = await confirm({
+      title: kind === "deposit" ? "Deposit with mobile wallet" : "Withdraw to mobile wallet",
+      message:
+        kind === "deposit"
+          ? `Deposit PKR ${amount.toLocaleString()} via ${walletRail} from ${walletPhone.trim()}?`
+          : `Send PKR ${amount.toLocaleString()} to your ${walletRail} wallet ${walletPhone.trim()}?`,
+      confirmLabel: kind === "deposit" ? "Deposit now" : "Withdraw now",
+      cancelLabel: "Cancel",
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const res = await fetch(`${API_URL}/api/payments/${kind}`, {
+        method: "POST",
+        credentials: "include",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          amount,
+          rail: walletRail,
+          walletPhone: walletPhone.trim(),
+          returnUrl: `${origin}/earnings?${kind}=1`,
+          cancelUrl: `${origin}/earnings?cancelled=1`,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.success === false) throw new Error(json.error?.message || "Failed");
+      const payload = json.data as {
+        status?: string;
+        mode?: string;
+        checkoutUrl?: string;
+        provider?: string;
+      };
+      if (payload.checkoutUrl && payload.status && payload.status !== "SUCCEEDED") {
+        toast.success(`Redirecting to ${payload.provider || walletRail}…`);
+        window.location.href = payload.checkoutUrl;
+        return;
+      }
+      toast.success(
+        payload.mode === "live"
+          ? kind === "deposit"
+            ? `Deposited via ${walletRail}`
+            : `Withdrawn via ${walletRail}`
+          : `Sandbox: ${kind} via ${walletRail} (no real money until live merchant keys)`,
+      );
+      if (kind === "withdraw") setWithdrawAmount("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Wallet action failed");
     } finally {
       setBusy(false);
     }
@@ -223,12 +309,13 @@ function Inner() {
         </p>
       </section>
 
-      <section className="mb-4 grid gap-3 sm:grid-cols-4">
+      <section className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[
           ["Available", data.available],
+          ["Deposited", data.deposited || 0],
           ["Job net", data.netEarned],
           ["Referral", data.referralEarned],
-          ["Released", data.released],
+          ["Withdrawn", data.released],
         ].map(([label, value]) => (
           <div key={String(label)} className="rounded-2xl border border-line bg-cream p-4">
             <p className="text-xs font-semibold uppercase text-brass-deep">{label}</p>
@@ -238,6 +325,87 @@ function Inner() {
           </div>
         ))}
       </section>
+
+      {isPkUser ? (
+        <section className="mb-6 rounded-2xl border border-line bg-cream p-4">
+          <h3 className="font-display text-lg font-bold">Pakistan wallet · JazzCash / EasyPaisa</h3>
+          <p className="mt-1 text-xs text-muted">
+            Deposit money into your CallMe2Serve available balance, or withdraw available funds to
+            your JazzCash / EasyPaisa mobile number. Works on phone and laptop. Minimum PKR 100.
+            Sandbox credits instantly until live merchant keys are set.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm font-semibold">
+              Wallet
+              <select
+                className="rounded-xl border border-line bg-paper px-3 py-2.5 font-normal"
+                value={walletRail}
+                onChange={(e) => setWalletRail(e.target.value as (typeof PK_WALLET_RAILS)[number])}
+              >
+                {PK_WALLET_RAILS.map((r) => (
+                  <option key={r} value={r}>
+                    {r === "JAZZCASH" ? "JazzCash" : "EasyPaisa"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-semibold">
+              Mobile number
+              <input
+                className="rounded-xl border border-line bg-paper px-3 py-2.5 font-normal"
+                inputMode="tel"
+                placeholder="03XXXXXXXXX"
+                value={walletPhone}
+                onChange={(e) => setWalletPhone(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <form className="grid gap-2 rounded-xl border border-line bg-paper p-3" onSubmit={(e) => void runWalletAction("deposit", e)}>
+              <p className="text-sm font-bold">Deposit</p>
+              <input
+                className="rounded-xl border border-line bg-cream px-3 py-2.5"
+                inputMode="decimal"
+                placeholder="Amount PKR"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-xl bg-forest px-4 py-3 text-sm font-semibold text-paper disabled:opacity-50"
+              >
+                {busy ? <ButtonLoader /> : "Deposit with JazzCash / EasyPaisa"}
+              </button>
+            </form>
+
+            <form className="grid gap-2 rounded-xl border border-line bg-paper p-3" onSubmit={(e) => void runWalletAction("withdraw", e)}>
+              <p className="text-sm font-bold">Withdraw</p>
+              <input
+                className="rounded-xl border border-line bg-cream px-3 py-2.5"
+                inputMode="decimal"
+                placeholder={`Amount (available ${data.available.toLocaleString()})`}
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={busy || data.available < 100}
+                className="rounded-xl bg-forest px-4 py-3 text-sm font-semibold text-paper disabled:opacity-50"
+              >
+                {busy ? <ButtonLoader /> : "Withdraw to JazzCash / EasyPaisa"}
+              </button>
+            </form>
+          </div>
+        </section>
+      ) : (
+        <section className="mb-6 rounded-2xl border border-line bg-mint p-4 text-sm text-muted">
+          JazzCash / EasyPaisa deposit & withdraw is enabled for Pakistani (PK / PKR) accounts for
+          now. Set country to Pakistan and currency to PKR in your place settings to use it.
+        </section>
+      )}
 
       <section className="mb-6 rounded-2xl border border-line bg-cream p-4">
         <h3 className="font-display text-lg font-bold">Pay package</h3>

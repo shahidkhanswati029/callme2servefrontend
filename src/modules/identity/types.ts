@@ -24,6 +24,8 @@ export type PublicAccount = {
   placeLabel: string | null;
   photoUrl: string | null;
   payoutAccountSet: boolean;
+  payoutRail?: string | null;
+  payoutLast4?: string | null;
   referralCode: string | null;
   referredById: string | null;
   rating: number;

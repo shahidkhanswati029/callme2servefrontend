@@ -260,7 +260,9 @@ export function AppShell({
                         : "packageFree",
                 )}
           </p>
-          <h1 className="font-display mt-2 text-2xl font-bold">{t(lang, "brandName")}</h1>
+          <h1 className="font-display mt-2 text-2xl font-bold text-[#f6f1e7]">
+            {t(lang, "brandName")}
+          </h1>
           <p className="mt-2 text-sm text-[var(--sidebar-text)]">
             {account?.name}
             {account?.isOnline ? ` · ${t(lang, "online")}` : ""}

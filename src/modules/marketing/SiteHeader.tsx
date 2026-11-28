@@ -30,15 +30,15 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
     return Array.from(set).sort();
   }, [countries]);
 
-  const primaryNav = [
-    { href: "/", label: t(language, "home"), always: true },
-    { href: "/categories", label: t(language, "categories"), always: true },
-    { href: "/search", label: t(language, "findExperts"), always: true },
-    { href: "/cities", label: t(language, "cities"), always: true },
-    { href: "/how-it-works", label: t(language, "howItWorks"), always: false },
-    { href: "/faq", label: t(language, "faq"), always: false },
-    { href: "/about", label: t(language, "about"), always: false },
-    { href: "/contact", label: t(language, "contact"), always: false },
+  const NAV = [
+    { href: "/", label: t(language, "home") },
+    { href: "/categories", label: t(language, "categories") },
+    { href: "/search", label: t(language, "findExperts") },
+    { href: "/cities", label: t(language, "cities") },
+    { href: "/how-it-works", label: t(language, "howItWorks") },
+    { href: "/faq", label: t(language, "faq") },
+    { href: "/about", label: t(language, "about") },
+    { href: "/contact", label: t(language, "contact") },
   ];
 
   useEffect(() => {
@@ -62,18 +62,18 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
           </Link>
 
           <nav
-            className="hidden min-w-0 flex-1 items-center gap-x-2.5 overflow-x-auto whitespace-nowrap text-[0.75rem] font-semibold text-muted [scrollbar-width:none] lg:flex xl:gap-x-3.5 xl:text-[0.8rem] [&::-webkit-scrollbar]:hidden"
+            className="hidden min-w-0 flex-1 items-center justify-center gap-x-2.5 overflow-x-auto whitespace-nowrap text-[0.75rem] font-semibold text-muted [scrollbar-width:none] lg:flex xl:gap-x-3.5 xl:text-sm [&::-webkit-scrollbar]:hidden"
             aria-label={t(language, "home")}
           >
-            {primaryNav.map((n) => {
+            {NAV.map((n) => {
               const active = pathname === n.href;
               return (
                 <Link
                   key={n.href}
                   href={n.href}
                   className={`cmts-nav-link shrink-0 transition-colors duration-200 ${
-                    n.always ? "" : "hidden xl:inline"
-                  } ${active ? "is-active text-forest" : "hover:text-forest"}`}
+                    active ? "is-active text-forest" : "hover:text-forest"
+                  }`}
                 >
                   {n.label}
                 </Link>
@@ -167,7 +167,7 @@ export function SiteHeader({ supportBanner = true }: { supportBanner?: boolean }
           <div className="animate-drawer border-t border-line px-4 py-3 lg:hidden sm:px-6">
             <div className="mx-auto grid max-w-6xl gap-3">
               <nav className="grid gap-1 text-sm font-semibold text-muted">
-                {primaryNav.map((n) => (
+                {NAV.map((n) => (
                   <Link
                     key={n.href}
                     href={n.href}

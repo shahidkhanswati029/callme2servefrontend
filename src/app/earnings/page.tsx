@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { getAccessToken } from "@/lib/token";
@@ -50,7 +50,10 @@ function Inner() {
   const account = useAppSelector((s) => s.session.account)!;
   const [data, setData] = useState<Earnings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [packageBusy, setPackageBusy] = useState(false);
+  const [depositBusy, setDepositBusy] = useState(false);
+  const [withdrawBusy, setWithdrawBusy] = useState(false);
+  const [payoutBusy, setPayoutBusy] = useState(false);
   const [pkg, setPkg] = useState<"SILVER" | "GOLD" | "PLATINUM">("SILVER");
   const [rail, setRail] = useState<(typeof RAILS)[number]>("JAZZCASH");
   const [cardNumber, setCardNumber] = useState("");
@@ -110,9 +113,8 @@ function Inner() {
     void load();
   }, [load]);
 
-  async function payPackage(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
+  async function payPackage() {
+    setPackageBusy(true);
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const res = await fetch(`${API_URL}/api/payments/package`, {
@@ -131,7 +133,7 @@ function Inner() {
       });
       const json = await res.json();
       if (!res.ok || json.success === false) throw new Error(json.error?.message || "Pay failed");
-      const data = json.data as {
+      const payload = json.data as {
         status?: string;
         mode?: string;
         account?: typeof account;
@@ -139,19 +141,19 @@ function Inner() {
         clientSecret?: string;
         provider?: string;
       };
-      if (data.checkoutUrl && data.status && data.status !== "SUCCEEDED") {
-        toast.success(`Redirecting to ${data.provider || rail} checkout…`);
-        window.location.href = data.checkoutUrl;
+      if (payload.checkoutUrl && payload.status && payload.status !== "SUCCEEDED") {
+        toast.success(`Redirecting to ${payload.provider || rail} package checkout…`);
+        window.location.href = payload.checkoutUrl;
         return;
       }
-      if (data.clientSecret && data.status !== "SUCCEEDED") {
+      if (payload.clientSecret && payload.status !== "SUCCEEDED") {
         toast.success("Complete card payment with Stripe Elements (client_secret returned).");
         await load();
         return;
       }
-      if (data.account) dispatch(setAccount(data.account));
+      if (payload.account) dispatch(setAccount(payload.account));
       toast.success(
-        data.mode === "live"
+        payload.mode === "live"
           ? `Paid ${pkg} via ${rail}`
           : `Sandbox: ${pkg} via ${rail} (no real money)`,
       );
@@ -161,7 +163,7 @@ function Inner() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Pay failed");
     } finally {
-      setBusy(false);
+      setPackageBusy(false);
     }
   }
 
@@ -174,7 +176,7 @@ function Inner() {
       cancelLabel: "Cancel",
     });
     if (!ok) return;
-    setBusy(true);
+    setPayoutBusy(true);
     try {
       const res = await fetch(`${API_URL}/api/payments/payout-request`, {
         method: "POST",
@@ -189,12 +191,12 @@ function Inner() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Payout failed");
     } finally {
-      setBusy(false);
+      setPayoutBusy(false);
     }
   }
 
   async function setDestination(r: (typeof RAILS)[number]) {
-    setBusy(true);
+    setPayoutBusy(true);
     try {
       const res = await fetch(`${API_URL}/api/payments/payout-destination`, {
         method: "POST",
@@ -214,18 +216,16 @@ function Inner() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
-      setBusy(false);
+      setPayoutBusy(false);
     }
   }
 
-  async function runWalletAction(kind: "deposit" | "withdraw", e: FormEvent) {
-    e.preventDefault();
+  async function runDeposit() {
     if (!isPkUser) {
       toast.error("JazzCash / EasyPaisa wallet is for Pakistani (PK / PKR) accounts only for now");
       return;
     }
-    const raw = kind === "deposit" ? depositAmount : withdrawAmount || String(data?.available || "");
-    const amount = Number(raw);
+    const amount = Number(depositAmount);
     if (!Number.isFinite(amount) || amount < 100) {
       toast.error("Minimum amount is PKR 100");
       return;
@@ -235,20 +235,17 @@ function Inner() {
       return;
     }
     const ok = await confirm({
-      title: kind === "deposit" ? "Deposit with mobile wallet" : "Withdraw to mobile wallet",
-      message:
-        kind === "deposit"
-          ? `Deposit PKR ${amount.toLocaleString()} via ${walletRail} from ${walletPhone.trim()}?`
-          : `Send PKR ${amount.toLocaleString()} to your ${walletRail} wallet ${walletPhone.trim()}?`,
-      confirmLabel: kind === "deposit" ? "Deposit now" : "Withdraw now",
+      title: "Deposit with mobile wallet",
+      message: `Deposit PKR ${amount.toLocaleString()} via ${walletRail} from ${walletPhone.trim()}?`,
+      confirmLabel: "Deposit now",
       cancelLabel: "Cancel",
     });
     if (!ok) return;
 
-    setBusy(true);
+    setDepositBusy(true);
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const res = await fetch(`${API_URL}/api/payments/${kind}`, {
+      const res = await fetch(`${API_URL}/api/payments/deposit`, {
         method: "POST",
         credentials: "include",
         headers: authHeaders(),
@@ -256,7 +253,7 @@ function Inner() {
           amount,
           rail: walletRail,
           walletPhone: walletPhone.trim(),
-          returnUrl: `${origin}/earnings?${kind}=1`,
+          returnUrl: `${origin}/earnings?deposit=1`,
           cancelUrl: `${origin}/earnings?cancelled=1`,
         }),
       });
@@ -269,23 +266,84 @@ function Inner() {
         provider?: string;
       };
       if (payload.checkoutUrl && payload.status && payload.status !== "SUCCEEDED") {
-        toast.success(`Redirecting to ${payload.provider || walletRail}…`);
+        toast.success(`Redirecting to ${payload.provider || walletRail} deposit…`);
         window.location.href = payload.checkoutUrl;
         return;
       }
       toast.success(
         payload.mode === "live"
-          ? kind === "deposit"
-            ? `Deposited via ${walletRail}`
-            : `Withdrawn via ${walletRail}`
-          : `Sandbox: ${kind} via ${walletRail} (no real money until live merchant keys)`,
+          ? `Deposited via ${walletRail}`
+          : `Sandbox: deposit via ${walletRail} (no real money until live merchant keys)`,
       );
-      if (kind === "withdraw") setWithdrawAmount("");
       await load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Wallet action failed");
+      toast.error(err instanceof Error ? err.message : "Deposit failed");
     } finally {
-      setBusy(false);
+      setDepositBusy(false);
+    }
+  }
+
+  async function runWithdraw() {
+    if (!isPkUser) {
+      toast.error("JazzCash / EasyPaisa wallet is for Pakistani (PK / PKR) accounts only for now");
+      return;
+    }
+    const amount = Number(withdrawAmount || String(data?.available || ""));
+    if (!Number.isFinite(amount) || amount < 100) {
+      toast.error("Minimum amount is PKR 100");
+      return;
+    }
+    if (!walletPhone.trim()) {
+      toast.error("Enter your JazzCash / EasyPaisa mobile number (03XXXXXXXXX)");
+      return;
+    }
+    const ok = await confirm({
+      title: "Withdraw to mobile wallet",
+      message: `Send PKR ${amount.toLocaleString()} to your ${walletRail} wallet ${walletPhone.trim()}?`,
+      confirmLabel: "Withdraw now",
+      cancelLabel: "Cancel",
+    });
+    if (!ok) return;
+
+    setWithdrawBusy(true);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const res = await fetch(`${API_URL}/api/payments/withdraw`, {
+        method: "POST",
+        credentials: "include",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          amount,
+          rail: walletRail,
+          walletPhone: walletPhone.trim(),
+          returnUrl: `${origin}/earnings?withdraw=1`,
+          cancelUrl: `${origin}/earnings?cancelled=1`,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.success === false) throw new Error(json.error?.message || "Failed");
+      const payload = json.data as {
+        status?: string;
+        mode?: string;
+        checkoutUrl?: string;
+        provider?: string;
+      };
+      if (payload.checkoutUrl && payload.status && payload.status !== "SUCCEEDED") {
+        toast.success(`Redirecting to ${payload.provider || walletRail} withdraw…`);
+        window.location.href = payload.checkoutUrl;
+        return;
+      }
+      toast.success(
+        payload.mode === "live"
+          ? `Withdrawn via ${walletRail}`
+          : `Sandbox: withdraw via ${walletRail} (no real money until live merchant keys)`,
+      );
+      setWithdrawAmount("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Withdraw failed");
+    } finally {
+      setWithdrawBusy(false);
     }
   }
 
@@ -362,7 +420,7 @@ function Inner() {
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <form className="grid gap-2 rounded-xl border border-line bg-paper p-3" onSubmit={(e) => void runWalletAction("deposit", e)}>
+            <div className="grid gap-2 rounded-xl border border-line bg-paper p-3">
               <p className="text-sm font-bold">Deposit</p>
               <input
                 className="rounded-xl border border-line bg-cream px-3 py-2.5"
@@ -370,18 +428,18 @@ function Inner() {
                 placeholder="Amount PKR"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                required
               />
               <button
-                type="submit"
-                disabled={busy}
+                type="button"
+                disabled={depositBusy || packageBusy || withdrawBusy}
+                onClick={() => void runDeposit()}
                 className="rounded-xl bg-forest px-4 py-3 text-sm font-semibold text-paper disabled:opacity-50"
               >
-                {busy ? <ButtonLoader /> : "Deposit with JazzCash / EasyPaisa"}
+                {depositBusy ? <ButtonLoader /> : "Deposit with JazzCash / EasyPaisa"}
               </button>
-            </form>
+            </div>
 
-            <form className="grid gap-2 rounded-xl border border-line bg-paper p-3" onSubmit={(e) => void runWalletAction("withdraw", e)}>
+            <div className="grid gap-2 rounded-xl border border-line bg-paper p-3">
               <p className="text-sm font-bold">Withdraw</p>
               <input
                 className="rounded-xl border border-line bg-cream px-3 py-2.5"
@@ -391,13 +449,14 @@ function Inner() {
                 onChange={(e) => setWithdrawAmount(e.target.value)}
               />
               <button
-                type="submit"
-                disabled={busy || data.available < 100}
+                type="button"
+                disabled={withdrawBusy || packageBusy || depositBusy || data.available < 100}
+                onClick={() => void runWithdraw()}
                 className="rounded-xl bg-forest px-4 py-3 text-sm font-semibold text-paper disabled:opacity-50"
               >
-                {busy ? <ButtonLoader /> : "Withdraw to JazzCash / EasyPaisa"}
+                {withdrawBusy ? <ButtonLoader /> : "Withdraw to JazzCash / EasyPaisa"}
               </button>
-            </form>
+            </div>
           </div>
         </section>
       ) : (
@@ -415,7 +474,7 @@ function Inner() {
           {rates?.inquiries?.[pkg] || "Unlimited"}
           {rates?.jobCommissionEnabled ? " · job commission on" : ""}
         </p>
-        <form className="mt-3 grid gap-3" onSubmit={payPackage}>
+        <div className="mt-3 grid gap-3">
           <div className="flex flex-wrap gap-2">
             {(["SILVER", "GOLD", "PLATINUM"] as const).map((p) => (
               <button
@@ -452,7 +511,6 @@ function Inner() {
                 placeholder="Card number"
                 value={cardNumber}
                 onChange={(e) => setCardNumber(e.target.value)}
-                required
               />
               <input
                 className="rounded-xl border border-line bg-paper px-3 py-2"
@@ -475,13 +533,14 @@ function Inner() {
             </div>
           ) : null}
           <button
-            type="submit"
-            disabled={busy}
+            type="button"
+            disabled={packageBusy || depositBusy || withdrawBusy}
+            onClick={() => void payPackage()}
             className="rounded-xl bg-forest px-4 py-3 font-semibold text-paper disabled:opacity-50"
           >
-            {busy ? <ButtonLoader /> : `Pay ${pkg}`}
+            {packageBusy ? <ButtonLoader /> : `Pay ${pkg}`}
           </button>
-        </form>
+        </div>
       </section>
 
       <section className="mb-6 flex flex-wrap gap-2">
@@ -489,7 +548,7 @@ function Inner() {
           <button
             key={r}
             type="button"
-            disabled={busy}
+            disabled={payoutBusy || packageBusy}
             onClick={() => void setDestination(r)}
             className="rounded-xl border border-line px-3 py-2 text-xs font-semibold"
           >
@@ -498,7 +557,7 @@ function Inner() {
         ))}
         <button
           type="button"
-          disabled={busy || data.available <= 0}
+          disabled={payoutBusy || packageBusy || data.available <= 0}
           onClick={() => void requestPayout()}
           className="rounded-xl bg-forest px-4 py-2 text-sm font-semibold text-paper disabled:opacity-50"
         >

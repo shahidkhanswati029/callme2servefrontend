@@ -10,6 +10,7 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { t } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
+import { useCompleteWordQuery } from "@/shared/useCompleteWordQuery";
 
 export default function DeskContactsPage() {
   return (
@@ -27,7 +28,8 @@ function Inner() {
   const [page, setPage] = useState(1);
   const [kind, setKind] = useState<"ALL" | "CONTACT" | "COMPLAINT">("ALL");
   const [status, setStatus] = useState("");
-  const [q, setQ] = useState("");
+  const [qDraft, setQDraft] = useState("");
+  const q = useCompleteWordQuery(qDraft);
   const [loading, setLoading] = useState(true);
   const pageSize = 20;
 
@@ -36,7 +38,7 @@ function Inner() {
       const res = await deskApi.contacts(page, pageSize, {
         kind,
         status: status || undefined,
-        q: q.trim() || undefined,
+        q: q || undefined,
       });
       setRows(res.data.contacts);
       setTotal(res.data.total);
@@ -92,12 +94,12 @@ function Inner() {
         <input
           className="min-w-[180px] flex-1 rounded-lg border border-line bg-paper px-3 py-1.5 text-xs"
           placeholder="Search name, email, message…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={qDraft}
+          onChange={(e) => setQDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               setPage(1);
-              void load();
+              setQDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
             }
           }}
         />

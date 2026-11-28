@@ -11,6 +11,7 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { useAppSelector } from "@/store/hooks";
 import { countryLabel, t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
+import { useCompleteWordQuery } from "@/shared/useCompleteWordQuery";
 
 export default function SearchPage() {
   return (
@@ -26,9 +27,12 @@ function Inner() {
   const lang = useUiLanguage();
   const currency = useAppSelector((s) => s.uiPrefs.currency);
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
-  const [q, setQ] = useState(params.get("q") || "");
-  const [city, setCity] = useState(params.get("city") || "");
-  const [category, setCategory] = useState(params.get("category") || "");
+  const [qDraft, setQDraft] = useState(params.get("q") || "");
+  const [cityDraft, setCityDraft] = useState(params.get("city") || "");
+  const [categoryDraft, setCategoryDraft] = useState(params.get("category") || "");
+  const q = useCompleteWordQuery(qDraft);
+  const city = useCompleteWordQuery(cityDraft);
+  const category = useCompleteWordQuery(categoryDraft);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [experts, setExperts] = useState<PublicExpert[]>([]);
@@ -65,18 +69,26 @@ function Inner() {
   }, [load]);
 
   useEffect(() => {
-    setQ(params.get("q") || "");
-    setCity(params.get("city") || "");
-    setCategory(params.get("category") || "");
+    // Trailing space forces complete-word commit when syncing from URL.
+    const pq = params.get("q") || "";
+    const pc = params.get("city") || "";
+    const pcat = params.get("category") || "";
+    setQDraft(pq ? `${pq} ` : "");
+    setCityDraft(pc ? `${pc} ` : "");
+    setCategoryDraft(pcat ? `${pcat} ` : "");
     setPage(1);
   }, [params]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Finish current words so API + URL use the typed values.
+    setQDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
+    setCityDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
+    setCategoryDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
     const sp = new URLSearchParams();
-    if (q.trim()) sp.set("q", q.trim());
-    if (city.trim()) sp.set("city", city.trim());
-    if (category.trim()) sp.set("category", category.trim());
+    if (qDraft.trim()) sp.set("q", qDraft.trim());
+    if (cityDraft.trim()) sp.set("city", cityDraft.trim());
+    if (categoryDraft.trim()) sp.set("category", categoryDraft.trim());
     setPage(1);
     router.push(`/search?${sp.toString()}`);
   }
@@ -96,20 +108,29 @@ function Inner() {
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
             placeholder={t(lang, "searchExperts")}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={qDraft}
+            onChange={(e) => setQDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setQDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
+            }}
           />
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
             placeholder={t(lang, "city")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+            value={cityDraft}
+            onChange={(e) => setCityDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setCityDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
+            }}
           />
           <input
             className="rounded-xl border border-line bg-paper px-3 py-3 text-sm"
             placeholder={t(lang, "category")}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={categoryDraft}
+            onChange={(e) => setCategoryDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setCategoryDraft((v) => (v.trim() ? `${v.trim()} ` : ""));
+            }}
           />
           <button
             type="submit"
@@ -118,6 +139,7 @@ function Inner() {
             {t(lang, "search")}
           </button>
         </form>
+        <p className="mt-2 text-xs text-muted">{t(lang, "searchWhenWordDone")}</p>
 
         <p className="mt-4 text-sm text-muted">
           {total} {total === 1 ? t(lang, "expertSingular") : t(lang, "expertsLabel")} ·{" "}

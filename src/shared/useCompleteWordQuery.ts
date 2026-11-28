@@ -1,46 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
- * Commits a search string for API calls only when:
+ * Commits search text for API calls only when:
  * - the field is cleared, or
- * - the user finishes a word (trailing space / Enter), or
- * - typing pauses after a complete non-empty word (debounce).
- * Mid-word keystrokes do not commit.
+ * - the user finishes a word (value ends with whitespace).
+ *
+ * Mid-word letter presses do NOT update the committed value (no pause debounce).
+ * For Enter: callers should append a trailing space, e.g. setDraft((v) => `${v.trim()} `).
  */
-export function useCompleteWordQuery(draft: string, debounceMs = 450): string {
+export function useCompleteWordQuery(draft: string): string {
   const [committed, setCommitted] = useState(() => draft.trim());
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const trimmed = draft.trim();
-    const endsWithSpace = /\s$/.test(draft);
-
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
 
     if (!trimmed) {
       setCommitted("");
       return;
     }
 
-    if (endsWithSpace) {
+    if (/\s$/.test(draft)) {
       setCommitted(trimmed);
-      return;
     }
-
-    timer.current = setTimeout(() => {
-      // Pause after typing → treat current token as a complete word.
-      setCommitted(trimmed);
-    }, debounceMs);
-
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [draft, debounceMs]);
+  }, [draft]);
 
   return committed;
 }

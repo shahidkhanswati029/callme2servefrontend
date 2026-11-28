@@ -126,24 +126,6 @@ export default function WelcomePage() {
   return (
     <GuestOnly>
       <MarketingShell>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "CallMe2Serve",
-              url: process.env.NEXT_PUBLIC_SITE_URL || "https://callme2serve.com",
-              description:
-                "Find trusted local experts with live GPS pins. Ask for work, open a shop, pay digitally.",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: `${process.env.NEXT_PUBLIC_SITE_URL || "https://callme2serve.com"}/search?q={search_term_string}`,
-                "query-input": "required name=search_term_string",
-              },
-            }),
-          }}
-        />
         <section className="relative overflow-hidden bg-forest text-paper">
           <div
             aria-hidden

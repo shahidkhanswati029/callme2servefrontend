@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Serif_Display } from "next/font/google";
 import { AppProviders } from "@/store/Provider";
+import { SeoJsonLd } from "@/modules/marketing/SeoJsonLd";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SEO_KEYWORDS,
+  SITE_NAME,
+  SITE_URL,
+} from "@/shared/seo";
 import "./globals.css";
 
 const notoSerif = Noto_Serif_Display({
@@ -21,26 +29,19 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://callme2serve.com";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "CallMe2Serve",
-    template: "%s · CallMe2Serve",
+    default: DEFAULT_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Find trusted local experts with live GPS pins. Ask for work, open a shop, pay digitally — cash is out.",
-  applicationName: "CallMe2Serve",
-  keywords: [
-    "experts",
-    "local services",
-    "shops",
-    "GPS",
-    "CallMe2Serve",
-    "marketplace",
-  ],
-  authors: [{ name: "CallMe2Serve" }],
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: SEO_KEYWORDS,
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "local services marketplace",
   icons: {
     icon: [{ url: "/brand-mark.svg", type: "image/svg+xml" }],
     shortcut: ["/brand-mark.svg"],
@@ -49,25 +50,33 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteUrl,
-    siteName: "CallMe2Serve",
-    title: "CallMe2Serve · Find trusted experts near you",
-    description:
-      "Real experts with live place pins. Ask, accept, pay, and get a real receipt.",
-    images: [{ url: "/brand-mark.svg", alt: "CallMe2Serve" }],
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "CallMe2Serve",
-    description: "Find trusted experts near you with live GPS pins.",
-    images: ["/brand-mark.svg"],
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   alternates: { canonical: "/" },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -96,6 +105,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`notranslate ${notoSerif.variable} ${inter.variable}`} translate="no">
+        <SeoJsonLd />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

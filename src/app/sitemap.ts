@@ -1,26 +1,32 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/shared/seo";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://callme2serve.com";
+type Entry = {
+  path: string;
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+  priority: number;
+};
+
+const PUBLIC_PAGES: Entry[] = [
+  { path: "/", changeFrequency: "daily", priority: 1 },
+  { path: "/search", changeFrequency: "daily", priority: 0.95 },
+  { path: "/categories", changeFrequency: "daily", priority: 0.9 },
+  { path: "/cities", changeFrequency: "daily", priority: 0.9 },
+  { path: "/how-it-works", changeFrequency: "weekly", priority: 0.85 },
+  { path: "/faq", changeFrequency: "weekly", priority: 0.85 },
+  { path: "/about", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/contact", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/login", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/terms", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/privacy", changeFrequency: "yearly", priority: 0.4 },
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = [
-    "/",
-    "/categories",
-    "/search",
-    "/cities",
-    "/how-it-works",
-    "/faq",
-    "/about",
-    "/contact",
-    "/terms",
-    "/privacy",
-    "/login",
-  ];
   const now = new Date();
-  return paths.map((path) => ({
-    url: `${siteUrl}${path}`,
+  return PUBLIC_PAGES.map(({ path, changeFrequency, priority }) => ({
+    url: path === "/" ? SITE_URL : `${SITE_URL}${path}`,
     lastModified: now,
-    changeFrequency: path === "/" ? "daily" : "weekly",
-    priority: path === "/" ? 1 : 0.7,
+    changeFrequency,
+    priority,
   }));
 }

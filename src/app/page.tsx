@@ -18,6 +18,7 @@ import {
 } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 import { Reveal } from "@/shared/ui/Reveal";
+import { useCompleteWordQuery } from "@/shared/useCompleteWordQuery";
 
 const QUICK = ["Tutor", "Surgical", "Leather", "Tailor", "Institute"];
 
@@ -39,6 +40,8 @@ const FALLBACK_CATS = [
   "Factory",
   "Other",
 ];
+
+const LANDING_FILTER_CATS = ["All", ...FALLBACK_CATS] as const;
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -69,6 +72,16 @@ export default function WelcomePage() {
     }>
   >([]);
   const [featured, setFeatured] = useState<PublicExpert[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
+  const [expertFilterCat, setExpertFilterCat] = useState("All");
+  const [expertDraft, setExpertDraft] = useState("");
+  const expertQ = useCompleteWordQuery(expertDraft);
+  const [topRankedOnly, setTopRankedOnly] = useState(false);
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [nearMe, setNearMe] = useState(false);
+  const [userGps, setUserGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsHint, setGpsHint] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
 
   useEffect(() => {
     try {
@@ -80,18 +93,16 @@ export default function WelcomePage() {
   }, []);
 
   const loadMarketing = useCallback(async () => {
-    const [o, c, cats, r, s] = await Promise.all([
+    const [o, c, cats, r] = await Promise.all([
       marketingApi.overview(countryCode),
       marketingApi.cities(countryCode),
       marketingApi.categories(countryCode),
       marketingApi.reviews(6, countryCode),
-      marketingApi.search({ pageSize: 8, country: countryCode }),
     ]);
     setOverview(o.data.overview);
     setCities(mergeCitiesByCanonical(c.data.cities).slice(0, 8));
     setCategories(cats.data.categories.slice(0, 8));
     setReviews(r.data.reviews);
-    setFeatured(s.data.experts);
   }, [countryCode]);
 
   useEffect(() => {
@@ -110,6 +121,67 @@ export default function WelcomePage() {
     };
   }, [loadMarketing]);
 
+  const requestGps = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGpsHint(t(language, "geoUnsupported"));
+      setNearMe(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setNearMe(true);
+        setGpsHint("");
+      },
+      (err) => {
+        setNearMe(false);
+        setGpsHint(
+          err.code === err.PERMISSION_DENIED
+            ? t(language, "geoPermissionDenied")
+            : t(language, "geoUnavailable"),
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60_000 },
+    );
+  }, [language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setFeaturedLoading(true);
+      try {
+        const s = await marketingApi.search({
+          pageSize: 8,
+          country: countryCode,
+          category: expertFilterCat === "All" ? undefined : expertFilterCat,
+          q: expertQ || undefined,
+          topRankedOnly: topRankedOnly || undefined,
+          onlineOnly: onlineOnly || undefined,
+          sort: nearMe && userGps ? "distance" : "rating",
+          latitude: nearMe && userGps ? userGps.lat : undefined,
+          longitude: nearMe && userGps ? userGps.lng : undefined,
+          km: nearMe && userGps ? 25 : undefined,
+        });
+        if (!cancelled) setFeatured(s.data.experts);
+      } catch {
+        if (!cancelled) setFeatured([]);
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    countryCode,
+    expertFilterCat,
+    expertQ,
+    topRankedOnly,
+    onlineOnly,
+    nearMe,
+    userGps,
+  ]);
+
   const goSearch = useCallback(
     (e?: React.FormEvent) => {
       e?.preventDefault();
@@ -122,13 +194,14 @@ export default function WelcomePage() {
     [serviceQ, cityQ, countryCode, router],
   );
 
-  const catCards = useMemo(
-    () =>
+  const catCards = useMemo(() => {
+    const base =
       categories.length > 0
         ? categories
-        : FALLBACK_CATS.map((name) => ({ name, experts: 0 })),
-    [categories],
-  );
+        : FALLBACK_CATS.map((name) => ({ name, experts: 0 }));
+    if (categoryFilter === "All") return base;
+    return base.filter((c) => c.name.toLowerCase() === categoryFilter.toLowerCase());
+  }, [categories, categoryFilter]);
 
   return (
     <GuestOnly>
@@ -295,6 +368,23 @@ export default function WelcomePage() {
               {t(language, "exploreAll")}
             </Link>
           </div>
+          <p className="mt-2 text-xs text-muted">{t(language, "filterCategories")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {LANDING_FILTER_CATS.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setCategoryFilter(name)}
+                className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  categoryFilter === name
+                    ? "bg-forest text-paper"
+                    : "border border-line bg-cream text-ink"
+                }`}
+              >
+                {name === "All" ? t(language, "filterAllStatuses") : tDynamic(language, name)}
+              </button>
+            ))}
+          </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {catCards.map((c, i) => (
               <Reveal key={c.name} delay={i * 60} variant="scale">
@@ -314,55 +404,129 @@ export default function WelcomePage() {
           </div>
         </section>
 
-        {featured.length > 0 ? (
-          <section className="border-y border-line bg-mint/35 py-12">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6">
-              <h2 className="font-display text-3xl font-bold">
-                {t(language, "expertsInCountry")} {countryLabel(language, countryCode)}
-              </h2>
-              <p className="mt-1 text-sm text-muted">{t(language, "livePinsCountry")}</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {featured.map((e, i) => (
-                  <Reveal key={e.id} delay={i * 70} variant="rise">
-                  <Link
-                    href={`/search?q=${encodeURIComponent(e.name)}&country=${countryCode}`}
-                    className={`cmts-card block cursor-pointer rounded-2xl border bg-cream p-4 hover:cursor-pointer ${
-                      e.topRanked
-                        ? "border-brass shadow-[0_8px_24px_rgba(224,154,43,0.22)]"
-                        : "border-line"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {e.photoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={e.photoUrl}
-                          alt=""
-                          className="h-11 w-11 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="grid h-11 w-11 place-items-center rounded-full bg-mint font-bold text-forest">
-                          {e.name.charAt(0)}
-                        </span>
-                      )}
-                      <div>
-                        <strong className="text-sm">{e.name}</strong>
-                        <p className="text-xs text-muted">{tExpertCard(language, e)}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-xs font-semibold text-brass-deep">
-                      ★ {Number(e.rating || 0).toFixed(1)} ({e.ratingCount})
-                      {e.isOnline ? ` · ${t(language, "online")}` : ` · ${t(language, "offline")}`}
-                      {e.topRanked ? ` · ${t(language, "topRanked")}` : ""}
-                      {` · ${tDynamic(language, e.package)}`}
-                    </p>
-                  </Link>
-                  </Reveal>
-                ))}
-              </div>
+        <section className="border-y border-line bg-mint/35 py-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <h2 className="font-display text-3xl font-bold">
+              {t(language, "expertsInCountry")} {countryLabel(language, countryCode)}
+            </h2>
+            <p className="mt-1 text-sm text-muted">{t(language, "livePinsCountry")}</p>
+            <p className="mt-1 text-xs text-muted">{t(language, "searchWhenWordDone")}</p>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <input
+                className="rounded-xl border border-line bg-cream px-3 py-2.5 text-sm text-ink"
+                placeholder={t(language, "searchExperts")}
+                value={expertDraft}
+                onChange={(e) => setExpertDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setExpertDraft((v) => `${v.trim()} `);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (nearMe) {
+                    setNearMe(false);
+                  } else {
+                    requestGps();
+                  }
+                }}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
+                  nearMe ? "bg-forest text-paper" : "border border-line bg-cream text-ink"
+                }`}
+              >
+                {t(language, "filterNearMe")}
+              </button>
             </div>
-          </section>
-        ) : null}
+            {gpsHint ? <p className="mt-2 text-xs text-brass-deep">{gpsHint}</p> : null}
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {LANDING_FILTER_CATS.map((name) => (
+                <button
+                  key={`ex-${name}`}
+                  type="button"
+                  onClick={() => setExpertFilterCat(name)}
+                  className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                    expertFilterCat === name
+                      ? "bg-forest text-paper"
+                      : "border border-line bg-cream text-ink"
+                  }`}
+                >
+                  {name === "All" ? t(language, "filterAllStatuses") : tDynamic(language, name)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setTopRankedOnly((v) => !v)}
+                className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  topRankedOnly ? "bg-brass text-forest" : "border border-line bg-cream text-ink"
+                }`}
+              >
+                {t(language, "filterTopRanked")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setOnlineOnly((v) => !v)}
+                className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  onlineOnly ? "bg-success text-paper" : "border border-line bg-cream text-ink"
+                }`}
+              >
+                {t(language, "filterOnlineOnly")}
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredLoading ? (
+                <p className="text-sm text-muted sm:col-span-2 lg:col-span-4">
+                  {t(language, "findingExperts")}
+                </p>
+              ) : featured.length === 0 ? (
+                <p className="rounded-2xl border border-line bg-cream p-4 text-sm text-muted sm:col-span-2 lg:col-span-4">
+                  {t(language, "noExpertsMatch")}
+                </p>
+              ) : (
+                featured.map((e, i) => (
+                  <Reveal key={e.id} delay={i * 70} variant="rise">
+                    <Link
+                      href={`/search?q=${encodeURIComponent(e.name)}&country=${countryCode}`}
+                      className={`cmts-card block cursor-pointer rounded-2xl border bg-cream p-4 hover:cursor-pointer ${
+                        e.topRanked
+                          ? "border-brass shadow-[0_8px_24px_rgba(224,154,43,0.22)]"
+                          : "border-line"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {e.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={e.photoUrl}
+                            alt=""
+                            className="h-11 w-11 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="grid h-11 w-11 place-items-center rounded-full bg-mint font-bold text-forest">
+                            {e.name.charAt(0)}
+                          </span>
+                        )}
+                        <div>
+                          <strong className="text-sm">{e.name}</strong>
+                          <p className="text-xs text-muted">{tExpertCard(language, e)}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs font-semibold text-brass-deep">
+                        ★ {Number(e.rating || 0).toFixed(1)} ({e.ratingCount})
+                        {e.isOnline ? ` · ${t(language, "online")}` : ` · ${t(language, "offline")}`}
+                        {e.topRanked ? ` · ${t(language, "topRanked")}` : ""}
+                        {e.distanceKm != null ? ` · ${e.distanceKm} km` : ""}
+                        {` · ${tDynamic(language, e.package)}`}
+                      </p>
+                    </Link>
+                  </Reveal>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
 
         <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
           <p className="text-center text-[0.7rem] font-bold uppercase tracking-[0.14em] text-brass-deep">

@@ -16,6 +16,7 @@ import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
 import { countryLabel, t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 import { Reveal } from "@/shared/ui/Reveal";
+import { useCompleteWordQuery } from "@/shared/useCompleteWordQuery";
 
 const NearbyMap = dynamic(
   () => import("./NearbyMap").then((m) => m.NearbyMap),
@@ -76,7 +77,12 @@ function HomeInner() {
   const [experts, setExperts] = useState<NearbyExpert[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(true);
   const [category, setCategory] = useState("All");
-  const [query, setQuery] = useState("");
+  const [queryDraft, setQueryDraft] = useState("");
+  const query = useCompleteWordQuery(queryDraft);
+  const [topRankedOnly, setTopRankedOnly] = useState(false);
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
+  const [useLiveGps, setUseLiveGps] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [focusExpertId, setFocusExpertId] = useState<string | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
@@ -93,15 +99,18 @@ function HomeInner() {
   const [inquiriesLabel, setInquiriesLabel] = useState("Unlimited");
 
   const loadNearby = useCallback(
-    async (searchQ?: string, origin?: Coordinates | null) => {
+    async (origin?: Coordinates | null) => {
       setLoadingNearby(true);
       try {
-        const from = origin ?? currentLocation;
+        const from = useLiveGps ? origin ?? currentLocation : null;
         const res = await locationApi.nearby(undefined, {
           category: category === "All" ? undefined : category,
-          q: (searchQ ?? query).trim() || undefined,
+          q: query || undefined,
           latitude: from?.lat,
           longitude: from?.lng,
+          topRankedOnly: topRankedOnly || undefined,
+          onlineOnly: onlineOnly || undefined,
+          sort: sortBy,
         });
         setExperts(res.data.experts || []);
         if (res.data.radiusKm) setRadiusKm(res.data.radiusKm);
@@ -113,14 +122,33 @@ function HomeInner() {
         setLoadingNearby(false);
       }
     },
-    [category, query, toast, lang, currentLocation],
+    [
+      category,
+      query,
+      toast,
+      lang,
+      currentLocation,
+      topRankedOnly,
+      onlineOnly,
+      sortBy,
+      useLiveGps,
+    ],
   );
 
-  // Category / live GPS origin changes refetch; typing does not until Search.
+  // Filter / complete-word query / GPS origin changes refetch (not mid-word typing).
   useEffect(() => {
     void loadNearby();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: category + GPS
-  }, [category, currentLocation?.lat, currentLocation?.lng]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional filter + word commit
+  }, [
+    category,
+    query,
+    topRankedOnly,
+    onlineOnly,
+    sortBy,
+    useLiveGps,
+    currentLocation?.lat,
+    currentLocation?.lng,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -303,23 +331,55 @@ function HomeInner() {
         </Reveal>
       </section>
 
-      <section className="mb-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+      <section className="mb-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
         <input
           className="rounded-xl border border-line bg-cream px-3 py-2.5 text-sm"
           placeholder={t(lang, "searchExperts")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={queryDraft}
+          onChange={(e) => setQueryDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") setQueryDraft((v) => `${v.trim()} `);
+          }}
         />
         <button
           type="button"
-          onClick={() => void loadNearby()}
-          className="rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-paper"
+          onClick={() => {
+            setUseLiveGps(true);
+            if (!navigator.geolocation) {
+              setLocationMessage(t(lang, "geoUnsupported"));
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                setCurrentLocation({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                });
+                setLocationMessage("");
+              },
+              () => setLocationMessage(t(lang, "geoPermissionDenied")),
+              { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+            );
+          }}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
+            useLiveGps && currentLocation
+              ? "bg-forest text-paper"
+              : "border border-line bg-cream text-ink"
+          }`}
         >
-          {t(lang, "search")}
+          {t(lang, "filterNearMe")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setUseLiveGps((v) => !v)}
+          className="rounded-xl border border-line bg-cream px-3 py-2.5 text-xs font-semibold"
+        >
+          {useLiveGps ? t(lang, "refreshGps") : t(lang, "place")}
         </button>
       </section>
+      <p className="mb-3 text-[0.7rem] text-muted">{t(lang, "searchWhenWordDone")}</p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
@@ -332,6 +392,44 @@ function HomeInner() {
             {t(lang, c.key)}
           </button>
         ))}
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setTopRankedOnly((v) => !v)}
+          className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            topRankedOnly ? "bg-brass text-forest" : "border border-line bg-cream text-ink"
+          }`}
+        >
+          {t(lang, "filterTopRanked")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOnlineOnly((v) => !v)}
+          className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            onlineOnly ? "bg-success text-paper" : "border border-line bg-cream text-ink"
+          }`}
+        >
+          {t(lang, "filterOnlineOnly")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSortBy("distance")}
+          className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            sortBy === "distance" ? "bg-forest text-paper" : "border border-line bg-cream text-ink"
+          }`}
+        >
+          {t(lang, "filterByDistance")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSortBy("rating")}
+          className={`cmts-pill rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            sortBy === "rating" ? "bg-forest text-paper" : "border border-line bg-cream text-ink"
+          }`}
+        >
+          {t(lang, "filterByRating")}
+        </button>
       </div>
 
       <section className="animate-rise mb-4" data-nearby-map>
@@ -395,8 +493,7 @@ function HomeInner() {
           </p>
         ) : (
           experts.map((n, i) => {
-            const top =
-              Number(n.rating || 0) >= 4.5 && Number((n as { ratingCount?: number }).ratingCount || 0) >= 3;
+            const top = Boolean(n.topRanked);
             return (
             <Reveal key={n.id} delay={Math.min(i * 45, 240)}>
             <div

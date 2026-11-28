@@ -371,5 +371,15 @@
   "whatWentWrong": "چه مشکلی پیش آمد؟",
   "howCanWeHelp": "چطور کمک کنیم؟",
   "errorServerTitle": "از سمت ما مشکلی پیش آمد",
-  "errorServerLede": "خطای غیرمنتظره. داده‌ها امن هستند — بعداً تلاش کنید."
+  "errorServerLede": "خطای غیرمنتظره. داده‌ها امن هستند — بعداً تلاش کنید.",
+  "filterNearMe": "نزدیک من",
+  "filterTopRanked": "برتر",
+  "filterByRating": "بر اساس امتیاز",
+  "filterByDistance": "بر اساس فاصله",
+  "filterAllStatuses": "همه",
+  "filterOnlineOnly": "الان آنلاین",
+  "filterExperts": "فیلتر متخصصان",
+  "filterCategories": "فیلتر دسته‌ها",
+  "refreshGps": "از موقعیت من استفاده کن",
+  "searchWhenWordDone": "پس از کلمه کامل یا تغییر فیلتر جستجو می‌شود"
 }

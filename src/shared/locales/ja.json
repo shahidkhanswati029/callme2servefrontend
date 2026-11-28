@@ -371,5 +371,15 @@
   "whatWentWrong": "何が問題でしたか？",
   "howCanWeHelp": "どのようにお手伝いできますか？",
   "errorServerTitle": "こちら側で問題が起きました",
-  "errorServerLede": "予期しないエラー。データは安全です — 後でもう一度。"
+  "errorServerLede": "予期しないエラー。データは安全です — 後でもう一度。",
+  "filterNearMe": "近く",
+  "filterTopRanked": "高評価",
+  "filterByRating": "評価順",
+  "filterByDistance": "距離順",
+  "filterAllStatuses": "すべて",
+  "filterOnlineOnly": "オンライン",
+  "filterExperts": "専門家を絞り込み",
+  "filterCategories": "カテゴリを絞り込み",
+  "refreshGps": "現在地を使う",
+  "searchWhenWordDone": "語の完成後、またはフィルター変更時に検索します"
 }

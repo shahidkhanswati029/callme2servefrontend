@@ -371,5 +371,15 @@
   "whatWentWrong": "ماذا حدث؟",
   "howCanWeHelp": "كيف يمكننا المساعدة؟",
   "errorServerTitle": "حدث خطأ من جهتنا",
-  "errorServerLede": "خطأ غير متوقع. بياناتك آمنة — حاول لاحقاً."
+  "errorServerLede": "خطأ غير متوقع. بياناتك آمنة — حاول لاحقاً.",
+  "filterNearMe": "بالقرب مني",
+  "filterTopRanked": "الأعلى تقييماً",
+  "filterByRating": "حسب التقييم",
+  "filterByDistance": "حسب المسافة",
+  "filterAllStatuses": "الكل",
+  "filterOnlineOnly": "متصل الآن",
+  "filterExperts": "تصفية الخبراء",
+  "filterCategories": "تصفية الفئات",
+  "refreshGps": "استخدم موقعي",
+  "searchWhenWordDone": "يتم البحث بعد كلمة كاملة أو تغيير الفلتر"
 }

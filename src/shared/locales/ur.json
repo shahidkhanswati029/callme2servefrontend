@@ -371,5 +371,15 @@
   "whatWentWrong": "کیا مسئلہ پیش آیا؟",
   "howCanWeHelp": "ہم کیسے مدد کر سکتے ہیں؟",
   "errorServerTitle": "ہماری طرف سے کچھ غلط ہوا",
-  "errorServerLede": "غیر متوقع خرابی۔ آپ کا ڈیٹا محفوظ ہے — تھوڑی دیر بعد دوبارہ کوشش کریں۔"
+  "errorServerLede": "غیر متوقع خرابی۔ آپ کا ڈیٹا محفوظ ہے — تھوڑی دیر بعد دوبارہ کوشش کریں۔",
+  "filterNearMe": "میرے قریب",
+  "filterTopRanked": "ٹاپ رینک",
+  "filterByRating": "ریٹنگ کے مطابق",
+  "filterByDistance": "فاصلے کے مطابق",
+  "filterAllStatuses": "سب",
+  "filterOnlineOnly": "ابھی آن لائن",
+  "filterExperts": "ماہرین فلٹر کریں",
+  "filterCategories": "زمرے فلٹر کریں",
+  "refreshGps": "میری لوکیشن استعمال کریں",
+  "searchWhenWordDone": "مکمل لفظ یا فلٹر بدلنے پر تلاش ہوتی ہے"
 }

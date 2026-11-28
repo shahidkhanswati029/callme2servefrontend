@@ -63,6 +63,9 @@ export const locationApi = {
       q?: string;
       latitude?: number;
       longitude?: number;
+      topRankedOnly?: boolean;
+      onlineOnly?: boolean;
+      sort?: "distance" | "rating";
     },
   ) {
     const params = new URLSearchParams();
@@ -71,6 +74,9 @@ export const locationApi = {
     if (filters?.q) params.set("q", filters.q);
     if (filters?.latitude != null) params.set("latitude", String(filters.latitude));
     if (filters?.longitude != null) params.set("longitude", String(filters.longitude));
+    if (filters?.topRankedOnly) params.set("topRankedOnly", "true");
+    if (filters?.onlineOnly) params.set("onlineOnly", "true");
+    if (filters?.sort) params.set("sort", filters.sort);
     const qs = params.toString();
     return request<{
       success: boolean;

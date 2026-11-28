@@ -48,6 +48,7 @@ export type PublicExpert = {
   package: string;
   isOnline: boolean;
   topRanked?: boolean;
+  distanceKm?: number;
 };
 
 export const marketingApi = {
@@ -74,10 +75,21 @@ export const marketingApi = {
     country?: string;
     page?: number;
     pageSize?: number;
+    topRankedOnly?: boolean;
+    onlineOnly?: boolean;
+    sort?: "rating" | "distance";
+    latitude?: number;
+    longitude?: number;
+    km?: number;
   }) {
     const sp = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== "") sp.set(k, String(v));
+      if (v === undefined || v === "" || v === false) return;
+      if (typeof v === "boolean") {
+        if (v) sp.set(k, "true");
+        return;
+      }
+      sp.set(k, String(v));
     });
     return get<{
       success: boolean;

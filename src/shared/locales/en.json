@@ -371,5 +371,15 @@
   "whatWentWrong": "What went wrong?",
   "howCanWeHelp": "How can we help?",
   "errorServerTitle": "Something went wrong on our side",
-  "errorServerLede": "CallMe2Serve hit an unexpected error. Your data is safe — try again in a moment."
+  "errorServerLede": "CallMe2Serve hit an unexpected error. Your data is safe — try again in a moment.",
+  "filterNearMe": "Near me",
+  "filterTopRanked": "Top ranked",
+  "filterByRating": "By rating",
+  "filterByDistance": "By distance",
+  "filterAllStatuses": "All",
+  "filterOnlineOnly": "Online now",
+  "filterExperts": "Filter experts",
+  "filterCategories": "Filter categories",
+  "refreshGps": "Use my location",
+  "searchWhenWordDone": "Search runs after a complete word or when you change a filter"
 }

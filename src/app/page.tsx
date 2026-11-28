@@ -8,7 +8,14 @@ import { MarketingShell } from "@/modules/marketing/MarketingShell";
 import { CityCover } from "@/modules/marketing/CityCover";
 import { marketingApi, type PublicExpert } from "@/modules/marketing/api";
 import { useAppSelector } from "@/store/hooks";
-import { canonicalizeCity, mergeCitiesByCanonical, t, tDynamic, tExpertCard } from "@/shared/i18n";
+import {
+  canonicalizeCity,
+  countryLabel,
+  mergeCitiesByCanonical,
+  t,
+  tDynamic,
+  tExpertCard,
+} from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 import { Reveal } from "@/shared/ui/Reveal";
 
@@ -146,7 +153,8 @@ export default function WelcomePage() {
           <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-16">
             <div>
               <p className="animate-rise text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-brass">
-                {t(language, "landingEyebrow")} · {countryCode} · {currency}
+                {t(language, "landingEyebrow")} · {countryLabel(language, countryCode)} ·{" "}
+                {currency}
               </p>
               <h1 className="animate-rise font-display mt-3 text-[clamp(2.3rem,5vw,3.7rem)] font-bold leading-[1.06] [animation-delay:70ms]">
                 {t(language, "findTrusted")}
@@ -310,7 +318,7 @@ export default function WelcomePage() {
           <section className="border-y border-line bg-mint/35 py-12">
             <div className="mx-auto max-w-6xl px-4 sm:px-6">
               <h2 className="font-display text-3xl font-bold">
-                {t(language, "expertsInCountry")} {countryCode}
+                {t(language, "expertsInCountry")} {countryLabel(language, countryCode)}
               </h2>
               <p className="mt-1 text-sm text-muted">{t(language, "livePinsCountry")}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

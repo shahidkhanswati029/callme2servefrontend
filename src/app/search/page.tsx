@@ -9,7 +9,7 @@ import { marketingApi, type PublicExpert } from "@/modules/marketing/api";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useAppSelector } from "@/store/hooks";
-import { t, tDynamic, tExpertCard } from "@/shared/i18n";
+import { countryLabel, t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function SearchPage() {
@@ -121,7 +121,7 @@ function Inner() {
 
         <p className="mt-4 text-sm text-muted">
           {total} {total === 1 ? t(lang, "expertSingular") : t(lang, "expertsLabel")} ·{" "}
-          {countryCode}
+          {countryLabel(lang, countryCode)}
           {liveShops ? ` · ${liveShops} ${t(lang, "shops")}` : ""} · {currency}
         </p>
 

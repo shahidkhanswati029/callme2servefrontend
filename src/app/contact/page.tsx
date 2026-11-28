@@ -7,8 +7,11 @@ import { marketingApi } from "@/modules/marketing/api";
 import { ButtonLoader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useAppSelector } from "@/store/hooks";
+import { countryLabel, t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function ContactPage() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const countryCode = useAppSelector((s) => s.uiPrefs.countryCode);
   const [kind, setKind] = useState<"CONTACT" | "COMPLAINT">("CONTACT");
@@ -33,7 +36,7 @@ export default function ContactPage() {
         message: message.trim(),
       });
       toast.success(
-        kind === "COMPLAINT" ? "Complaint sent to the desk" : "Message sent to the desk",
+        kind === "COMPLAINT" ? t(lang, "complaintSentDesk") : t(lang, "messageSentDesk"),
       );
       setName("");
       setEmail("");
@@ -41,7 +44,7 @@ export default function ContactPage() {
       setSubject("");
       setMessage("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send");
+      toast.error(err instanceof Error ? err.message : t(lang, "couldNotSend"));
     } finally {
       setBusy(false);
     }
@@ -50,23 +53,25 @@ export default function ContactPage() {
   return (
     <MarketingShell>
       <PageHero
-        eyebrow="Contact"
-        title="Talk to the desk"
-        lede="Questions, city requests, partnership notes, and complaints land on the company desk seat in full detail."
+        eyebrow={t(lang, "contact")}
+        title={t(lang, "talkToDesk")}
+        lede={t(lang, "contactPageLede")}
       />
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-line bg-cream p-5 text-sm">
-          <h2 className="font-display text-xl font-bold">Reach us</h2>
+          <h2 className="font-display text-xl font-bold">{t(lang, "reachUs")}</h2>
           <ul className="mt-4 grid gap-3 text-muted">
             <li>
-              Email:{" "}
+              {t(lang, "emailLabel")}:{" "}
               <a className="font-semibold text-forest" href="mailto:maaali615@gmail.com">
                 maaali615@gmail.com
               </a>
             </li>
-            <li>Country preference: {countryCode}</li>
-            <li>Choose Contact or Complaint — both open a full desk detail page.</li>
-            <li>Desk operators use the desk email seat — no password field.</li>
+            <li>
+              {t(lang, "countryPreference")}: {countryLabel(lang, countryCode) || "—"}
+            </li>
+            <li>{t(lang, "contactDeskHint")}</li>
+            <li>{t(lang, "contactDeskSeatHint")}</li>
           </ul>
         </div>
         <form onSubmit={onSubmit} className="grid gap-3 rounded-2xl border border-line bg-cream p-5">
@@ -80,12 +85,12 @@ export default function ContactPage() {
                   kind === k ? "bg-forest text-paper" : "border border-line"
                 }`}
               >
-                {k === "COMPLAINT" ? "Complaint" : "Contact"}
+                {k === "COMPLAINT" ? t(lang, "complaint") : t(lang, "contact")}
               </button>
             ))}
           </div>
           <label className="grid gap-1 text-sm font-semibold">
-            Name
+            {t(lang, "profileName")}
             <input
               required
               className="rounded-xl border border-line bg-paper px-3 py-3 font-normal"
@@ -94,7 +99,7 @@ export default function ContactPage() {
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
-            Email
+            {t(lang, "emailLabel")}
             <input
               required
               type="email"
@@ -104,25 +109,27 @@ export default function ContactPage() {
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
-            City (optional)
+            {t(lang, "cityOptional")}
             <input
               className="rounded-xl border border-line bg-paper px-3 py-3 font-normal"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="Request a city or mention yours"
+              placeholder={t(lang, "requestCityPlaceholder")}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
-            Subject (optional)
+            {t(lang, "titleOptional")}
             <input
               className="rounded-xl border border-line bg-paper px-3 py-3 font-normal"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder={kind === "COMPLAINT" ? "What went wrong?" : "How can we help?"}
+              placeholder={
+                kind === "COMPLAINT" ? t(lang, "whatWentWrong") : t(lang, "howCanWeHelp")
+              }
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
-            Message
+            {t(lang, "message")}
             <textarea
               required
               rows={5}
@@ -136,7 +143,13 @@ export default function ContactPage() {
             disabled={busy}
             className="rounded-xl bg-forest px-4 py-3 text-sm font-semibold text-paper disabled:opacity-50"
           >
-            {busy ? <ButtonLoader /> : kind === "COMPLAINT" ? "Send complaint" : "Send message"}
+            {busy ? (
+              <ButtonLoader />
+            ) : kind === "COMPLAINT" ? (
+              t(lang, "sendComplaint")
+            ) : (
+              t(lang, "sendMessageCta")
+            )}
           </button>
         </form>
       </section>

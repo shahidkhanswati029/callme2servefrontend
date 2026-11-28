@@ -3,44 +3,37 @@
 import Link from "next/link";
 import { MarketingShell } from "@/modules/marketing/MarketingShell";
 import { PageHero } from "@/modules/marketing/PageHero";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function AboutPage() {
+  const lang = useUiLanguage();
+
   return (
     <MarketingShell>
       <PageHero
-        eyebrow="About"
-        title="Everyone is an expert."
-        lede="CallMe2Serve is a global expert marketplace: Next.js, Express, PostgreSQL, Redux, Socket.io, and JWT — no Redis, no identity-card check."
+        eyebrow={t(lang, "aboutEyebrow")}
+        title={t(lang, "aboutTitle")}
+        lede={t(lang, "aboutLede")}
       />
       <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <div className="grid gap-6 text-sm leading-relaxed text-muted">
-          <p>
-            One expert account can ask for work or open a shop. Desk is a separate company seat
-            that watches the board — it does not approve each payment. Job pay creates a real
-            receipt and auto-releases the expert net.
-          </p>
-          <p>
-            Place is a live GPS pin. A shop goes on the map only with a pin and a door photo.
-            Language is separate from currency. Debit card is a rail; cash is not offered.
-          </p>
-          <p>
-            We grow city by city worldwide. Job commission is 0% for free and paid experts for
-            now — rates can be turned on later without changing receipts today. Referrers share
-            package fees when someone upgrades; worker net is never shrunk by referral.
-          </p>
+          <p>{t(lang, "aboutP1")}</p>
+          <p>{t(lang, "aboutP2")}</p>
+          <p>{t(lang, "aboutP3")}</p>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/how-it-works"
             className="rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-paper"
           >
-            How it works
+            {t(lang, "howItWorks")}
           </Link>
           <Link
             href="/login"
             className="rounded-xl border border-line bg-cream px-5 py-3 text-sm font-semibold"
           >
-            Join as expert
+            {t(lang, "joinAsExpert")}
           </Link>
         </div>
       </section>

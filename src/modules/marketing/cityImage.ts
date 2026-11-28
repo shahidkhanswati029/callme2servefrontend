@@ -1,4 +1,4 @@
-import { listCountries } from "@/shared/countries";
+import { countryName } from "@/shared/countries";
 
 /**
  * Curated Unsplash CDN photos of famous places.
@@ -96,8 +96,7 @@ function hashKey(s: string) {
 }
 
 export function countryDisplayName(code: string): string {
-  const hit = listCountries().find((c) => c.code.toUpperCase() === code.toUpperCase());
-  return hit?.name || code;
+  return countryName(code, "en") || code;
 }
 
 export function cityImageQuery(city: string, countryCode: string): string {

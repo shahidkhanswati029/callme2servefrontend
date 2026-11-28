@@ -7,6 +7,8 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { deskApi, type DeskBoard } from "@/modules/desk/api";
 import { Loader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DeskIncomePage() {
   return (
@@ -17,6 +19,7 @@ export default function DeskIncomePage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [board, setBoard] = useState<DeskBoard | null>(null);
 
@@ -29,7 +32,7 @@ function Inner() {
 
   if (!board) {
     return (
-      <AppShell title="Company income">
+      <AppShell title={t(lang, "companyIncome")}>
         <Loader label="Loading ledger totals…" />
       </AppShell>
     );
@@ -54,7 +57,7 @@ function Inner() {
   });
 
   return (
-    <AppShell title="Company passive income">
+    <AppShell title={t(lang, "companyPassiveIncome")}>
       <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold">
         <Link href="/desk/money" className="rounded-lg border border-line px-3 py-1.5">
           Ledger & receipts

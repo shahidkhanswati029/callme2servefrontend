@@ -8,6 +8,8 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { deskApi, type DeskContact } from "@/modules/desk/api";
 import { Loader, ButtonLoader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DeskContactDetailPage() {
   return (
@@ -18,6 +20,7 @@ export default function DeskContactDetailPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const params = useParams();
   const id = String(params.id || "");
@@ -67,14 +70,18 @@ function Inner() {
 
   if (loading || !row) {
     return (
-      <AppShell title="Contact detail">
+      <AppShell title={t(lang, "contactDetail")}>
         <Loader label="Loading message…" />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title={row.kind === "COMPLAINT" ? "Complaint detail" : "Contact detail"}>
+    <AppShell
+      title={
+        row.kind === "COMPLAINT" ? t(lang, "complaintDetail") : t(lang, "contactDetail")
+      }
+    >
       <div className="mb-4">
         <Link href="/desk/contacts" className="text-sm font-semibold text-forest underline">
           ← Back to inbox

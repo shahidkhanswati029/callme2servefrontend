@@ -8,6 +8,8 @@ import { deskApi, type DeskContact } from "@/modules/desk/api";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DeskContactsPage() {
   return (
@@ -18,6 +20,7 @@ export default function DeskContactsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<DeskContact[]>([]);
   const [total, setTotal] = useState(0);
@@ -50,7 +53,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="Contacts & complaints">
+    <AppShell title={t(lang, "contactsComplaints")}>
       <p className="mb-4 text-sm text-muted">
         Landing <Link href="/contact" className="font-semibold text-forest underline">/contact</Link>{" "}
         messages and complaints open here in full detail for the super-admin desk.

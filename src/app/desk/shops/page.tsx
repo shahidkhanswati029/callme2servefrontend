@@ -8,6 +8,8 @@ import { Loader, ButtonLoader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useConfirm } from "@/shared/confirm/ConfirmProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const STATUSES = ["", "LIVE", "HELD"] as const;
 
@@ -20,6 +22,7 @@ export default function DeskShopsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const { confirm } = useConfirm();
   const [rows, setRows] = useState<
@@ -55,7 +58,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="Shops">
+    <AppShell title={t(lang, "shops")}>
       <p className="mb-4 text-sm text-muted">
         Hold removes a shop from the live map. Release only works when pin + door photo exist.
       </p>

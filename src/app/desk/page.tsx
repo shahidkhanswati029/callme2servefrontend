@@ -9,6 +9,8 @@ import { AreaChart, BarChart, DonutChart, LineSpark, StackedBars } from "@/share
 import { Loader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useAppSelector } from "@/store/hooks";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DeskBoardPage() {
   return (
@@ -19,6 +21,7 @@ export default function DeskBoardPage() {
 }
 
 function BoardInner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const currency = useAppSelector((s) => s.uiPrefs.currency);
   const [board, setBoard] = useState<DeskBoard | null>(null);
@@ -39,7 +42,7 @@ function BoardInner() {
 
   if (loading || !board) {
     return (
-      <AppShell title="Super Admin">
+      <AppShell title={t(lang, "superAdmin")}>
         <Loader label="Loading desk board…" />
       </AppShell>
     );
@@ -59,7 +62,7 @@ function BoardInner() {
     : [{ label: "NONE", value: 0, commission: 0 }];
 
   return (
-    <AppShell title="Super Admin">
+    <AppShell title={t(lang, "superAdmin")}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
           {board.city} · live ledger only · {board.note}

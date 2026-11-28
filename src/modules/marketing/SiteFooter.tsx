@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BrandMark } from "@/modules/identity/components/BrandMark";
 import { useAppSelector } from "@/store/hooks";
-import { t } from "@/shared/i18n";
+import { countryLabel, t } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const SOCIAL = [
@@ -63,7 +63,7 @@ export function SiteFooter() {
           </div>
           <p className="mt-3 text-sm leading-relaxed text-[#d5e0d8]">{t(lang, "footerLede")}</p>
           <p className="mt-3 text-xs font-semibold text-brass">
-            {countryCode} · {currency}
+            {countryLabel(lang, countryCode)} · {currency}
           </p>
           <div className="mt-4 flex gap-2">
             {SOCIAL.map((s) => (

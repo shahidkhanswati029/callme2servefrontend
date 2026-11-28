@@ -2,38 +2,50 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { t, tDynamic, type UiLanguage } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export type SystemErrorKind = "server" | "network" | "notfound" | "generic";
 
 const COPY: Record<
   SystemErrorKind,
-  { eyebrow: string; title: string; lede: string; code: string }
+  { eyebrowKey: string; titleKey: string; ledeKey: string; code: string }
 > = {
   server: {
-    eyebrow: "Server trouble",
-    title: "Something went wrong on our side",
-    lede: "CallMe2Serve hit an unexpected error. Your data is safe — try again in a moment.",
+    eyebrowKey: "serverTrouble",
+    titleKey: "errorServerTitle",
+    ledeKey: "errorServerLede",
     code: "SERVER",
   },
   network: {
-    eyebrow: "Connection lost",
-    title: "We can’t reach the server",
-    lede: "Check your internet, or wait while the API comes back online. Then retry.",
+    eyebrowKey: "errorNetworkEyebrow",
+    titleKey: "errorNetworkTitle",
+    ledeKey: "errorNetworkLede",
     code: "NETWORK",
   },
   notfound: {
-    eyebrow: "Missing page",
-    title: "This page isn’t here",
-    lede: "The link may be old or mistyped. Head home and continue from there.",
+    eyebrowKey: "errorNotFoundEyebrow",
+    titleKey: "errorNotFoundTitle",
+    ledeKey: "errorNotFoundLede",
     code: "404",
   },
   generic: {
-    eyebrow: "Interrupted",
-    title: "We couldn’t finish that",
-    lede: "A temporary issue blocked this screen. Retry, or go back home.",
+    eyebrowKey: "errorGenericEyebrow",
+    titleKey: "errorGenericTitle",
+    ledeKey: "errorGenericLede",
     code: "ERROR",
   },
 };
+
+function localizedCopy(lang: UiLanguage, kind: SystemErrorKind) {
+  const row = COPY[kind];
+  return {
+    eyebrow: t(lang, row.eyebrowKey),
+    title: t(lang, row.titleKey),
+    lede: t(lang, row.ledeKey),
+    code: row.code,
+  };
+}
 
 type Props = {
   kind?: SystemErrorKind;
@@ -55,7 +67,8 @@ export function SystemError({
   homeHref = "/",
   actions,
 }: Props) {
-  const copy = COPY[kind];
+  const lang = useUiLanguage();
+  const copy = localizedCopy(lang, kind);
 
   return (
     <div className="relative grid min-h-[70vh] place-items-center overflow-hidden bg-paper px-4 py-16 text-ink">
@@ -83,13 +96,13 @@ export function SystemError({
                   {copy.eyebrow}
                 </p>
                 <h1 className="font-display mt-1 text-2xl font-bold leading-tight sm:text-3xl">
-                  {title || copy.title}
+                  {title ? tDynamic(lang, title) : copy.title}
                 </h1>
               </div>
             </div>
 
             <p className="animate-rise mt-4 text-sm leading-relaxed text-muted [animation-delay:80ms]">
-              {message || copy.lede}
+              {message ? tDynamic(lang, message) : copy.lede}
             </p>
 
             <div className="animate-rise mt-5 flex flex-wrap items-center gap-2 [animation-delay:120ms]">
@@ -110,14 +123,14 @@ export function SystemError({
                   onClick={onRetry}
                   className="cmts-press rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-paper"
                 >
-                  Try again
+                  {t(lang, "tryAgain")}
                 </button>
               ) : null}
               <Link
                 href={homeHref}
                 className="cmts-press rounded-xl border border-line bg-paper px-5 py-3 text-sm font-semibold text-ink"
               >
-                Back to home
+                {t(lang, "backToHome")}
               </Link>
               {actions}
             </div>
@@ -125,7 +138,7 @@ export function SystemError({
         </div>
 
         <p className="animate-fade mt-5 text-center text-xs text-muted [animation-delay:220ms]">
-          CallMe2Serve · if this keeps happening, contact support
+          {tDynamic(lang, "CallMe2Serve · if this keeps happening, contact support")}
         </p>
       </div>
     </div>

@@ -12,6 +12,8 @@ import { ReceiptCard, type PaymentReceipt } from "@/modules/jobs/ReceiptCard";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const KINDS = [
   "",
@@ -35,6 +37,7 @@ export default function DeskMoneyPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [tab, setTab] = useState<"ledger" | "receipts">("ledger");
   const [lines, setLines] = useState<DeskLedgerLine[]>([]);
@@ -77,7 +80,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="Money desk">
+    <AppShell title={t(lang, "moneyDesk")}>
       <p className="mb-4 text-sm text-muted">
         Live ledger and receipts from real jobs. Payments auto-release to experts — desk does not
         approve or hold money.

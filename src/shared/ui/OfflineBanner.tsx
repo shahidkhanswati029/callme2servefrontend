@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -9,6 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
  * Does not block the app — only warns.
  */
 export function OfflineBanner() {
+  const lang = useUiLanguage();
   const [offline, setOffline] = useState(false);
   const [apiDown, setApiDown] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -59,10 +62,8 @@ export function OfflineBanner() {
 
   if (!visible) return null;
 
-  const title = offline ? "You’re offline" : "Server unreachable";
-  const lede = offline
-    ? "Reconnect to the internet to keep using CallMe2Serve."
-    : "The API isn’t responding right now. Retry shortly — your session stays safe.";
+  const title = offline ? t(lang, "youAreOffline") : t(lang, "serverUnreachable");
+  const lede = offline ? t(lang, "youAreOfflineLede") : t(lang, "serverUnreachableLede");
 
   return (
     <div
@@ -83,12 +84,12 @@ export function OfflineBanner() {
           className="cmts-press shrink-0 rounded-lg bg-forest px-3 py-1.5 text-xs font-semibold text-paper"
           onClick={() => void checkApi()}
         >
-          Retry
+          {t(lang, "retry")}
         </button>
         <button
           type="button"
           className="cmts-press shrink-0 rounded-lg border border-line bg-paper px-2 py-1.5 text-xs font-semibold text-muted"
-          aria-label="Dismiss"
+          aria-label={t(lang, "dismiss")}
           onClick={() => setVisible(false)}
         >
           ✕

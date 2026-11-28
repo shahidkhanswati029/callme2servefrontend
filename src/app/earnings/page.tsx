@@ -9,6 +9,8 @@ import { useToast } from "@/shared/toast/ToastProvider";
 import { useConfirm } from "@/shared/confirm/ConfirmProvider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAccount } from "@/store/slices/sessionSlice";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -39,6 +41,7 @@ export default function EarningsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const { confirm } = useConfirm();
   const dispatch = useAppDispatch();
@@ -202,14 +205,14 @@ function Inner() {
 
   if (loading || !data) {
     return (
-      <AppShell title="Earnings">
+      <AppShell title={t(lang, "earnings")}>
         <Loader label="Loading ledger…" />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Earnings & payments">
+    <AppShell title={t(lang, "earningsPayments")}>
       <section className="mb-4 rounded-2xl border border-line bg-mint p-4 text-sm text-ink">
         <h3 className="font-display text-lg font-bold">Payments & company passive income</h3>
         <p className="mt-1 text-muted">

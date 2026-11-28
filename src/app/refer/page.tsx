@@ -8,6 +8,8 @@ import { Loader, ButtonLoader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setAccount } from "@/store/slices/sessionSlice";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -41,6 +43,7 @@ export default function ReferPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const dispatch = useAppDispatch();
   const account = useAppSelector((s) => s.session.account)!;
@@ -102,14 +105,14 @@ function Inner() {
 
   if (loading || !data) {
     return (
-      <AppShell title="Refer">
+      <AppShell title={t(lang, "refer")}>
         <Loader label="Loading referral…" />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Refer">
+    <AppShell title={t(lang, "refer")}>
       <p className="mb-4 text-sm text-muted">
         Share your QR / code. 10 referrals → Silver, 20 → Gold, 30 → Platinum (auto, 1 year). When a
         referred expert pays a subscription, you get {data.sharePercent}% and the company keeps the

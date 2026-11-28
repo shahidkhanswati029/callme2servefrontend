@@ -14,7 +14,7 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { identityApi } from "@/modules/identity/api";
 import { sessionCookies } from "@/shared/cookies";
 import { listCountries, currencyForCountry } from "@/shared/countries";
-import { canonicalizeCity } from "@/shared/i18n";
+import { canonicalizeCity, t } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function PlaceSettingsPage() {
@@ -32,7 +32,7 @@ function PlaceInner() {
   const router = useRouter();
   const toast = useToast();
   const { confirm } = useConfirm();
-  const countries = useMemo(() => listCountries(), []);
+  const countries = useMemo(() => listCountries(language), [language]);
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
   const [draft, setDraft] = useState({
@@ -117,10 +117,10 @@ function PlaceInner() {
       return;
     }
     const ok = await confirm({
-      title: "Update place",
+      title: t(language, "updatePlace"),
       message: `Save “${draft.label.trim()}” as your place pin on the map?`,
-      confirmLabel: "Save place",
-      cancelLabel: "Cancel",
+      confirmLabel: t(language, "savePlace"),
+      cancelLabel: t(language, "cancel"),
     });
     if (!ok) return;
     setBusy(true);
@@ -157,10 +157,10 @@ function PlaceInner() {
   }
 
   return (
-    <AppShell title="Place">
+    <AppShell title={t(language, "place")}>
       <p className="mb-4 text-sm text-muted">
         On the map now:{" "}
-        <strong className="text-ink">{account.placeLabel || "Not set"}</strong>. Saving does
+        <strong className="text-ink">{account.placeLabel || t(language, "notSet")}</strong>. Saving does
         not move your shop pin. Rating travels with you.
       </p>
 

@@ -13,7 +13,7 @@ import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { notificationsApi } from "@/modules/notifications/api";
 import { BarChart, DonutChart } from "@/shared/ui/MiniCharts";
-import { t, tDynamic, tExpertCard } from "@/shared/i18n";
+import { countryLabel, t, tDynamic, tExpertCard } from "@/shared/i18n";
 import { useUiLanguage } from "@/shared/useUiLanguage";
 import { Reveal } from "@/shared/ui/Reveal";
 
@@ -156,7 +156,7 @@ function HomeInner() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocationMessage("Your browser does not support location services.");
+      setLocationMessage(t(lang, "geoUnsupported"));
       return;
     }
     let cancelled = false;
@@ -172,11 +172,9 @@ function HomeInner() {
       (error) => {
         if (cancelled) return;
         if (error.code === error.PERMISSION_DENIED) {
-          setLocationMessage(
-            "Location permission denied. Allow location to show your exact position.",
-          );
+          setLocationMessage(t(lang, "geoPermissionDenied"));
         } else {
-          setLocationMessage("Unable to get GPS. Showing saved place if available.");
+          setLocationMessage(t(lang, "geoUnavailable"));
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
@@ -184,7 +182,7 @@ function HomeInner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,7 +206,12 @@ function HomeInner() {
     <AppShell>
       <header className="animate-rise mb-4">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass-deep">
-          {(account.city || displayCountry || t(lang, "city")).toUpperCase()} · {t(lang, "today")}
+          {(
+            account.city ||
+            countryLabel(lang, displayCountry) ||
+            t(lang, "city")
+          ).toUpperCase()}{" "}
+          · {t(lang, "today")}
         </p>
         <h2 className="font-display mt-1 text-2xl font-bold">{account.name}</h2>
         <p className="mt-1 text-sm text-muted">
@@ -368,7 +371,7 @@ function HomeInner() {
               {t(lang, "currencyLabel")}
             </p>
             <strong className="mt-1 block text-sm">
-              {displayCountry} · {displayCurrency}
+              {countryLabel(lang, displayCountry)} · {displayCurrency}
             </strong>
           </div>
         </Reveal>
@@ -437,7 +440,7 @@ function HomeInner() {
                       }
                     }}
                   >
-                    Directions
+                    {t(lang, "directions")}
                   </button>
                   <Link
                     href={`/inbox/${n.id}`}

@@ -14,7 +14,13 @@ import {
 } from "@/store/slices/uiPrefsSlice";
 import { useToast } from "@/shared/toast/ToastProvider";
 import { ButtonLoader } from "@/shared/ui/Loader";
-import { getUiLanguageOptions, isUiLanguage, t, type UiLanguage } from "@/shared/i18n";
+import {
+  getUiLanguageOptions,
+  isRtl,
+  isUiLanguage,
+  t,
+  type UiLanguage,
+} from "@/shared/i18n";
 import { listCountries } from "@/shared/countries";
 import { notificationsApi } from "@/modules/notifications/api";
 import { useSocket } from "@/modules/chat/useSocket";
@@ -86,8 +92,9 @@ export function AppShell({
   const [unread, setUnread] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const countries = useMemo(() => listCountries(), []);
+  const countries = useMemo(() => listCountries(lang), [lang]);
   const languageOptions = useMemo(() => getUiLanguageOptions(lang), [lang]);
+  const rtl = isRtl(lang);
   const currencies = useMemo(() => {
     const set = new Set(countries.map((c) => c.currency).filter(Boolean));
     return Array.from(set).sort();
@@ -144,7 +151,7 @@ export function AppShell({
         .then((res) => setUnread(res.data.unread || 0))
         .catch(() => undefined);
       if (pathname !== "/notifications" && (n.title || n.body)) {
-        toast.info(`${n.title || "Notice"}${n.body ? `: ${n.body}` : ""}`);
+        toast.info(`${n.title || t(lang, "notice")}${n.body ? `: ${n.body}` : ""}`);
       }
     },
   });
@@ -211,7 +218,7 @@ export function AppShell({
             >
               {t(lang, l.key)}
               {l.key === "notifications" && unread > 0 ? (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
+                <span className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
                   {unread > 99 ? "99+" : unread}
                 </span>
               ) : null}
@@ -267,7 +274,7 @@ export function AppShell({
         <button
           type="button"
           disabled={authBusy}
-          className="mt-auto rounded-xl border border-white/20 px-3 py-2.5 text-left text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
+          className="mt-auto rounded-xl border border-white/20 px-3 py-2.5 text-start text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
           onClick={() => void handleSignOut()}
         >
           {authBusy ? (
@@ -280,7 +287,7 @@ export function AppShell({
         </button>
       </aside>
 
-      {/* Mobile left hamburger drawer — full feature set */}
+      {/* Mobile hamburger drawer — full feature set */}
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <button
@@ -289,7 +296,11 @@ export function AppShell({
             aria-label={t(lang, "hideMenu")}
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="animate-drawer-left absolute inset-y-0 left-0 flex w-[min(86vw,300px)] flex-col bg-[var(--sidebar)] p-5 text-paper shadow-2xl">
+          <aside
+            className={`absolute inset-y-0 flex w-[min(86vw,300px)] flex-col bg-[var(--sidebar)] p-5 text-paper shadow-2xl ${
+              rtl ? "end-0 animate-drawer" : "start-0 animate-drawer-left"
+            }`}
+          >
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-brass">
@@ -311,7 +322,7 @@ export function AppShell({
             <button
               type="button"
               disabled={authBusy}
-              className="mt-4 rounded-xl border border-white/20 px-3 py-2.5 text-left text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
+              className="mt-4 rounded-xl border border-white/20 px-3 py-2.5 text-start text-sm font-semibold text-[var(--sidebar-text)] disabled:opacity-50"
               onClick={() => void handleSignOut()}
             >
               {authBusy ? (
@@ -356,13 +367,13 @@ export function AppShell({
               onClick={goBack}
               className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold"
             >
-              ← {t(lang, "back")}
+              <span aria-hidden>{rtl ? "→" : "←"}</span> {t(lang, "back")}
             </button>
             {title ? <span className="truncate text-sm font-semibold">{title}</span> : null}
             {!isDesk && unread > 0 ? (
               <Link
                 href="/notifications"
-                className="ml-auto rounded-full bg-brass px-2 py-0.5 text-[0.65rem] font-bold text-forest lg:hidden"
+                className="ms-auto rounded-full bg-brass px-2 py-0.5 text-[0.65rem] font-bold text-forest lg:hidden"
               >
                 {unread > 99 ? "99+" : unread}
               </Link>
@@ -386,7 +397,7 @@ export function AppShell({
                 className="rounded-xl border border-line bg-cream px-3 py-2 text-xs font-semibold"
                 aria-label={t(lang, "back")}
               >
-                ← {t(lang, "back")}
+                <span aria-hidden>{rtl ? "→" : "←"}</span> {t(lang, "back")}
               </button>
               <button
                 type="button"
@@ -400,7 +411,7 @@ export function AppShell({
                 <h2 className="font-display truncate text-2xl font-bold text-ink">{title}</h2>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex max-w-full flex-wrap items-center gap-2 sm:border-s sm:border-line sm:ps-2">
               {!isDesk ? (
                 <Link
                   href="/notifications"
@@ -408,7 +419,7 @@ export function AppShell({
                 >
                   {t(lang, "notifications")}
                   {unread > 0 ? (
-                    <span className="ml-1 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
+                    <span className="ms-1 rounded-full bg-brass px-1.5 text-[0.65rem] font-bold text-forest">
                       {unread > 99 ? "99+" : unread}
                     </span>
                   ) : null}
@@ -427,19 +438,7 @@ export function AppShell({
                 className="rounded-xl border border-line bg-cream px-2 py-2 text-xs font-semibold"
                 value={uiLang}
                 aria-label={t(lang, "language")}
-                onChange={(e) => {
-                  const next = e.target.value as UiLanguage;
-                  dispatch(setUiLanguage(next));
-                  try {
-                    document.documentElement.lang = next;
-                    document.documentElement.dir =
-                      next === "ur" || next === "pa" || next === "ar" || next === "fa"
-                        ? "rtl"
-                        : "ltr";
-                  } catch {
-                    // ignore
-                  }
-                }}
+                onChange={(e) => dispatch(setUiLanguage(e.target.value as UiLanguage))}
               >
                 {languageOptions.map((o) => (
                   <option key={o.code} value={o.code}>
@@ -448,21 +447,21 @@ export function AppShell({
                 ))}
               </select>
               <select
-                className="max-w-[7.5rem] rounded-xl border border-line bg-cream px-2 py-2 text-xs font-semibold"
+                className="min-w-[9rem] max-w-[14rem] rounded-xl border border-line bg-cream px-2 py-2 text-xs font-semibold"
                 value={countryCode}
-                aria-label="Country"
+                aria-label={t(lang, "country")}
                 onChange={(e) => dispatch(setCountry(e.target.value))}
               >
                 {countries.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.code}
+                    {c.name}
                   </option>
                 ))}
               </select>
               <select
                 className="rounded-xl border border-line bg-cream px-2 py-2 text-xs font-semibold"
                 value={currency}
-                aria-label="Currency"
+                aria-label={t(lang, "currencyLabel")}
                 onChange={(e) => dispatch(setCurrency(e.target.value))}
               >
                 {currencies.map((c) => (

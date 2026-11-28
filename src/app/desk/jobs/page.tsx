@@ -8,6 +8,8 @@ import { ReceiptCard, type PaymentReceipt } from "@/modules/jobs/ReceiptCard";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const STATUSES = ["", "OPEN", "ACCEPTED", "COMPLETED", "CANCELLED"] as const;
 
@@ -20,6 +22,7 @@ export default function DeskJobsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<DeskJob[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,7 +52,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="All jobs">
+    <AppShell title={t(lang, "allJobs")}>
       <form
         className="mb-4 flex flex-wrap gap-2"
         onSubmit={(e) => {

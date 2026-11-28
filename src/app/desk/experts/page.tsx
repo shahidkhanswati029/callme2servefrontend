@@ -7,6 +7,8 @@ import { deskApi } from "@/modules/desk/api";
 import { Loader } from "@/shared/ui/Loader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 const PACKAGES = ["", "FREE", "SILVER", "GOLD", "PLATINUM"] as const;
 
@@ -19,6 +21,7 @@ export default function DeskExpertsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<
     Awaited<ReturnType<typeof deskApi.experts>>["data"]["experts"]
@@ -54,7 +57,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="Experts">
+    <AppShell title={t(lang, "experts")}>
       <form
         className="mb-4 flex flex-wrap gap-2"
         onSubmit={(e) => {

@@ -16,6 +16,7 @@ import arJson from "./locales/ar.json";
 import faJson from "./locales/fa.json";
 import jaJson from "./locales/ja.json";
 import aliasesJson from "./locales/db-aliases.json";
+import { countryName } from "./countries";
 
 export type UiLanguage = "en" | "ur" | "pa" | "ar" | "fa" | "ja";
 
@@ -234,6 +235,12 @@ function tDynamicImpl(lang: UiLanguage, value: string | null | undefined): strin
   const countryKey = `country${raw.toUpperCase()}`;
   if (dict.en[countryKey]) return tImpl(lang, countryKey);
 
+  // ISO country codes → full localized official names (never show abbreviations in UI).
+  if (/^[A-Za-z]{2}$/.test(raw)) {
+    const named = countryName(raw, lang);
+    if (named && named.toUpperCase() !== raw.toUpperCase()) return named;
+  }
+
   if (lang === "en") {
     const canon = canonicalizeCityImpl(raw);
     if (canon && canon !== raw && /^[\x00-\x7F]+$/.test(canon)) return canon;
@@ -242,6 +249,18 @@ function tDynamicImpl(lang: UiLanguage, value: string | null | undefined): strin
 
   // Auto word/phrase translation from locale dictionaries + aliases (no per-string hardcoding).
   return autoTranslateText(lang, raw);
+}
+
+/** Full country display name for the active UI language (never an ISO abbreviation). */
+function countryLabelImpl(lang: UiLanguage, code: string | null | undefined): string {
+  if (!code) return "";
+  const raw = String(code).trim();
+  if (!raw) return "";
+  const fromDict = dict.en[`country${raw.toUpperCase()}`]
+    ? tImpl(lang, `country${raw.toUpperCase()}`)
+    : "";
+  if (fromDict) return fromDict;
+  return countryName(raw, lang) || raw.toUpperCase();
 }
 
 function tExpertCardImpl(
@@ -304,6 +323,7 @@ function getUiLanguageOptionsImpl(
 export const t = tImpl;
 export const tDynamic = tDynamicImpl;
 export const tExpertCard = tExpertCardImpl;
+export const countryLabel = countryLabelImpl;
 export const canonicalizeCity = canonicalizeCityImpl;
 export const mergeCitiesByCanonical = mergeCitiesByCanonicalImpl;
 export const isRtl = isRtlImpl;

@@ -7,6 +7,8 @@ import { RequireAuth } from "@/modules/identity/components/AuthGuard";
 import { deskApi, type DeskActivity } from "@/modules/desk/api";
 import { Loader } from "@/shared/ui/Loader";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DeskActivityPage() {
   return (
@@ -17,6 +19,7 @@ export default function DeskActivityPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [activity, setActivity] = useState<DeskActivity | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +42,7 @@ function Inner() {
   }, [load]);
 
   return (
-    <AppShell title="Live board">
+    <AppShell title={t(lang, "liveBoard")}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted">
           Real jobs, ledger, receipts, shops, and notifications — refreshes every 45s.

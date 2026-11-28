@@ -12,6 +12,7 @@ import { useToast } from "@/shared/toast/ToastProvider";
 import { ButtonLoader } from "@/shared/ui/Loader";
 import { listCountries, currencyForCountry } from "@/shared/countries";
 import { getAccessToken } from "@/lib/token";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function DetailsPage() {
   return (
@@ -22,12 +23,13 @@ export default function DetailsPage() {
 }
 
 function DetailsInner() {
+  const lang = useUiLanguage();
   const account = useAppSelector((s) => s.session.account)!;
   const dispatch = useAppDispatch();
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const countries = useMemo(() => listCountries(), []);
+  const countries = useMemo(() => listCountries(lang), [lang]);
   const [country, setCountry] = useState(account.country || "PK");
   const [languagesText, setLanguagesText] = useState(
     account.languages.length ? account.languages.join(", ") : "",

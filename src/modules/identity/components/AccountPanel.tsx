@@ -13,6 +13,8 @@ import { RequireAuth } from "./AuthGuard";
 import { uploadMedia } from "@/modules/chat/api";
 import { identityApi } from "../api";
 import { setAccount } from "@/store/slices/sessionSlice";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export function AccountPanel() {
   return (
@@ -23,6 +25,7 @@ export function AccountPanel() {
 }
 
 function AccountInner() {
+  const lang = useUiLanguage();
   const account = useAppSelector((s) => s.session.account)!;
   const authBusy = useAppSelector((s) => s.session.authBusy);
   const dispatch = useAppDispatch();
@@ -31,7 +34,7 @@ function AccountInner() {
   const [uploading, setUploading] = useState(false);
 
   return (
-    <AppShell title="Me">
+    <AppShell title={t(lang, "me")}>
       {account.seat === "EXPERT" ? <ProfileCompletionBar account={account} /> : null}
 
       <div className="mt-4 rounded-2xl border border-line bg-cream p-4">
@@ -150,7 +153,7 @@ function AccountInner() {
           className="rounded-xl border border-line px-4 py-3 font-semibold disabled:opacity-50"
           onClick={async () => {
             await dispatch(signOut());
-            toast.info("Signed out");
+            toast.info(t(lang, "signedOut"));
             router.push("/");
           }}
         >

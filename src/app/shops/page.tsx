@@ -7,6 +7,8 @@ import { useToast } from "@/shared/toast/ToastProvider";
 import { Loader, ButtonLoader } from "@/shared/ui/Loader";
 import { AppShell } from "@/modules/layout/AppShell";
 import { RequireAuth } from "@/modules/identity/components/AuthGuard";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function ShopsPage() {
   return (
@@ -17,6 +19,7 @@ export default function ShopsPage() {
 }
 
 function ShopsInner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,14 +151,14 @@ function ShopsInner() {
 
   if (loading) {
     return (
-      <AppShell title="Shops">
+      <AppShell title={t(lang, "shops")}>
         <Loader label="Loading shops…" />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Your shop">
+    <AppShell title={t(lang, "yourShop")}>
       <section className="mb-4 rounded-2xl border border-line bg-mint p-4 text-sm text-ink">
         <h3 className="font-display text-lg font-bold">Easy shop path</h3>
         <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">

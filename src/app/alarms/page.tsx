@@ -9,6 +9,8 @@ import { useSocket } from "@/modules/chat/useSocket";
 import { Loader } from "@/shared/ui/Loader";
 import { formatChatDay, formatChatTime } from "@/shared/time";
 import { useToast } from "@/shared/toast/ToastProvider";
+import { t } from "@/shared/i18n";
+import { useUiLanguage } from "@/shared/useUiLanguage";
 
 export default function AlarmsPage() {
   return (
@@ -19,6 +21,7 @@ export default function AlarmsPage() {
 }
 
 function Inner() {
+  const lang = useUiLanguage();
   const toast = useToast();
   const [rows, setRows] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +82,7 @@ function Inner() {
   }
 
   return (
-    <AppShell title="Alarms">
+    <AppShell title={t(lang, "alarms")}>
       <section className="mb-4 rounded-2xl border border-line bg-mint p-4 text-sm">
         <h3 className="font-display text-lg font-bold">Job pings & quiet hours</h3>
         <p className="mt-1 text-muted">
